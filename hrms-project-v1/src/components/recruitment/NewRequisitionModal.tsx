@@ -21,7 +21,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowRight, ArrowLeft, Plus, X, Briefcase, CheckCircle2 } from "lucide-react";
+import {
+  Loader2,
+  ArrowRight,
+  ArrowLeft,
+  Plus,
+  X,
+  Briefcase,
+  CheckCircle2,
+} from "lucide-react";
 import { useToast } from "@/components/ToastProvider";
 
 interface NewRequisitionModalProps {
@@ -60,8 +68,8 @@ export function NewRequisitionModal({
     location: "",
     hiringReason: "NEW_POSITION",
     replacementForId: "",
-    minExperienceYears: 0,
-    maxExperienceYears: 3,
+    minExperienceYears: 0 as number | string,
+    maxExperienceYears: 3 as number | string,
     minSalary: "",
     maxSalary: "",
     currency: "INR",
@@ -72,18 +80,22 @@ export function NewRequisitionModal({
     justification: "",
   });
 
-  const getToken = () => (typeof window !== "undefined" ? localStorage.getItem("hrms_token") : null);
+  const getToken = () =>
+    typeof window !== "undefined" ? localStorage.getItem("hrms_token") : null;
 
   useEffect(() => {
     if (open) {
       const headers = { Authorization: `Bearer ${getToken()}` };
-      axios.get(`${API_URL}/organization/departments`, { headers })
+      axios
+        .get(`${API_URL}/organization/departments`, { headers })
         .then((res) => setDepartments(res.data || []))
         .catch(() => {});
-      axios.get(`${API_URL}/organization/designations`, { headers })
+      axios
+        .get(`${API_URL}/organization/designations`, { headers })
         .then((res) => setDesignations(res.data || []))
         .catch(() => {});
-      axios.get(`${API_URL}/employees`, { headers })
+      axios
+        .get(`${API_URL}/employees`, { headers })
         .then((res) => setEmployees(res.data || []))
         .catch(() => {});
 
@@ -101,9 +113,13 @@ export function NewRequisitionModal({
           minSalary: initialData.minSalary ? String(initialData.minSalary) : "",
           maxSalary: initialData.maxSalary ? String(initialData.maxSalary) : "",
           currency: initialData.currency || "INR",
-          expectedJoiningDate: initialData.expectedJoiningDate ? initialData.expectedJoiningDate.split("T")[0] : "",
+          expectedJoiningDate: initialData.expectedJoiningDate
+            ? initialData.expectedJoiningDate.split("T")[0]
+            : "",
           isBudgeted: initialData.isBudgeted ?? true,
-          budgetAmount: initialData.budgetAmount ? String(initialData.budgetAmount) : "",
+          budgetAmount: initialData.budgetAmount
+            ? String(initialData.budgetAmount)
+            : "",
           requiredSkills: initialData.requiredSkills || [],
           justification: initialData.justification || "",
         });
@@ -167,32 +183,51 @@ export function NewRequisitionModal({
         employmentType: formData.employmentType,
         location: formData.location || null,
         hiringReason: formData.hiringReason,
-        replacementForId: formData.hiringReason === "REPLACEMENT" ? formData.replacementForId || null : null,
+        replacementForId:
+          formData.hiringReason === "REPLACEMENT"
+            ? formData.replacementForId || null
+            : null,
         minExperienceYears: Number(formData.minExperienceYears) || 0,
-        maxExperienceYears: formData.maxExperienceYears ? Number(formData.maxExperienceYears) : null,
+        maxExperienceYears: formData.maxExperienceYears
+          ? Number(formData.maxExperienceYears)
+          : null,
         minSalary: formData.minSalary ? Number(formData.minSalary) : null,
         maxSalary: formData.maxSalary ? Number(formData.maxSalary) : null,
         currency: formData.currency,
         expectedJoiningDate: formData.expectedJoiningDate || null,
         isBudgeted: formData.isBudgeted,
-        budgetAmount: formData.budgetAmount ? Number(formData.budgetAmount) : null,
+        budgetAmount: formData.budgetAmount
+          ? Number(formData.budgetAmount)
+          : null,
         requiredSkills: formData.requiredSkills,
         justification: formData.justification || null,
       };
 
       let reqId: string;
       if (initialData?.id) {
-        await axios.patch(`${API_URL}/recruitment/manpower/${initialData.id}`, payload, { headers });
+        await axios.patch(
+          `${API_URL}/recruitment/manpower/${initialData.id}`,
+          payload,
+          { headers },
+        );
         reqId = initialData.id;
         toast("Requisition updated successfully", "success");
       } else {
-        const res = await axios.post(`${API_URL}/recruitment/manpower`, payload, { headers });
+        const res = await axios.post(
+          `${API_URL}/recruitment/manpower`,
+          payload,
+          { headers },
+        );
         reqId = res.data.id;
         toast("Manpower requisition draft saved", "success");
       }
 
       if (submitNow) {
-        await axios.post(`${API_URL}/recruitment/manpower/${reqId}/submit`, {}, { headers });
+        await axios.post(
+          `${API_URL}/recruitment/manpower/${reqId}/submit`,
+          {},
+          { headers },
+        );
         toast("Requisition submitted for approval!", "success");
       }
 
@@ -216,10 +251,13 @@ export function NewRequisitionModal({
             </div>
             <div>
               <DialogTitle className="text-xl font-bold">
-                {initialData ? "Edit Manpower Requisition" : "New Manpower Requisition"}
+                {initialData
+                  ? "Edit Manpower Requisition"
+                  : "New Manpower Requisition"}
               </DialogTitle>
               <DialogDescription>
-                Follow the 3-step wizard to document headcount need, compensation, and justification.
+                Follow the 3-step wizard to document headcount need,
+                compensation, and justification.
               </DialogDescription>
             </div>
           </div>
@@ -228,28 +266,52 @@ export function NewRequisitionModal({
         {/* Wizard Steps indicator */}
         <div className="flex items-center justify-between my-2 px-2 py-3 bg-muted/40 rounded-xl border">
           <div className="flex items-center gap-2">
-            <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-              step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-            }`}>1</span>
-            <span className={`text-xs font-medium ${step === 1 ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+            <span
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                step >= 1
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              1
+            </span>
+            <span
+              className={`text-xs font-medium ${step === 1 ? "text-primary font-semibold" : "text-muted-foreground"}`}
+            >
               Role & Headcount
             </span>
           </div>
           <div className="h-[2px] w-8 bg-border" />
           <div className="flex items-center gap-2">
-            <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-              step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-            }`}>2</span>
-            <span className={`text-xs font-medium ${step === 2 ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+            <span
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                step >= 2
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              2
+            </span>
+            <span
+              className={`text-xs font-medium ${step === 2 ? "text-primary font-semibold" : "text-muted-foreground"}`}
+            >
               Compensation & Budget
             </span>
           </div>
           <div className="h-[2px] w-8 bg-border" />
           <div className="flex items-center gap-2">
-            <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-              step >= 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-            }`}>3</span>
-            <span className={`text-xs font-medium ${step === 3 ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+            <span
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                step >= 3
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              3
+            </span>
+            <span
+              className={`text-xs font-medium ${step === 3 ? "text-primary font-semibold" : "text-muted-foreground"}`}
+            >
               Skills & Justification
             </span>
           </div>
@@ -265,7 +327,9 @@ export function NewRequisitionModal({
                 </label>
                 <Select
                   value={formData.departmentId}
-                  onValueChange={(val) => val && setFormData({ ...formData, departmentId: val })}
+                  onValueChange={(val) =>
+                    val && setFormData({ ...formData, departmentId: val })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Department" />
@@ -286,7 +350,9 @@ export function NewRequisitionModal({
                 </label>
                 <Select
                   value={formData.designationId}
-                  onValueChange={(val) => val && setFormData({ ...formData, designationId: val })}
+                  onValueChange={(val) =>
+                    val && setFormData({ ...formData, designationId: val })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Designation" />
@@ -311,7 +377,12 @@ export function NewRequisitionModal({
                   type="number"
                   min="1"
                   value={formData.positionsCount}
-                  onChange={(e) => setFormData({ ...formData, positionsCount: parseInt(e.target.value) || 1 })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      positionsCount: parseInt(e.target.value) || 1,
+                    })
+                  }
                 />
               </div>
 
@@ -321,7 +392,9 @@ export function NewRequisitionModal({
                 </label>
                 <Select
                   value={formData.employmentType}
-                  onValueChange={(val) => val && setFormData({ ...formData, employmentType: val })}
+                  onValueChange={(val) =>
+                    val && setFormData({ ...formData, employmentType: val })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -342,7 +415,9 @@ export function NewRequisitionModal({
                 <Input
                   placeholder="e.g. Guwahati / Remote"
                   value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, location: e.target.value })
+                  }
                 />
               </div>
             </div>
@@ -354,7 +429,9 @@ export function NewRequisitionModal({
                 </label>
                 <Select
                   value={formData.hiringReason}
-                  onValueChange={(val) => val && setFormData({ ...formData, hiringReason: val })}
+                  onValueChange={(val) =>
+                    val && setFormData({ ...formData, hiringReason: val })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -374,7 +451,9 @@ export function NewRequisitionModal({
                   </label>
                   <Select
                     value={formData.replacementForId}
-                    onValueChange={(val) => val && setFormData({ ...formData, replacementForId: val })}
+                    onValueChange={(val) =>
+                      val && setFormData({ ...formData, replacementForId: val })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select outgoing employee" />
@@ -406,7 +485,13 @@ export function NewRequisitionModal({
                   min="0"
                   step="0.5"
                   value={formData.minExperienceYears}
-                  onChange={(e) => setFormData({ ...formData, minExperienceYears: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      minExperienceYears:
+                        e.target.value === "" ? "" : parseFloat(e.target.value),
+                    })
+                  }
                 />
               </div>
               <div>
@@ -418,7 +503,13 @@ export function NewRequisitionModal({
                   min="0"
                   step="0.5"
                   value={formData.maxExperienceYears}
-                  onChange={(e) => setFormData({ ...formData, maxExperienceYears: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      maxExperienceYears:
+                        e.target.value === "" ? "" : parseFloat(e.target.value),
+                    })
+                  }
                 />
               </div>
             </div>
@@ -432,7 +523,9 @@ export function NewRequisitionModal({
                   type="number"
                   placeholder="e.g. 600000"
                   value={formData.minSalary}
-                  onChange={(e) => setFormData({ ...formData, minSalary: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, minSalary: e.target.value })
+                  }
                 />
               </div>
               <div>
@@ -443,7 +536,9 @@ export function NewRequisitionModal({
                   type="number"
                   placeholder="e.g. 900000"
                   value={formData.maxSalary}
-                  onChange={(e) => setFormData({ ...formData, maxSalary: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, maxSalary: e.target.value })
+                  }
                 />
               </div>
               <div>
@@ -452,7 +547,9 @@ export function NewRequisitionModal({
                 </label>
                 <Select
                   value={formData.currency}
-                  onValueChange={(val) => val && setFormData({ ...formData, currency: val })}
+                  onValueChange={(val) =>
+                    val && setFormData({ ...formData, currency: val })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -475,7 +572,12 @@ export function NewRequisitionModal({
                 <Input
                   type="date"
                   value={formData.expectedJoiningDate}
-                  onChange={(e) => setFormData({ ...formData, expectedJoiningDate: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      expectedJoiningDate: e.target.value,
+                    })
+                  }
                 />
               </div>
 
@@ -487,7 +589,9 @@ export function NewRequisitionModal({
                   type="number"
                   placeholder="e.g. 1600000"
                   value={formData.budgetAmount}
-                  onChange={(e) => setFormData({ ...formData, budgetAmount: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, budgetAmount: e.target.value })
+                  }
                 />
               </div>
             </div>
@@ -519,10 +623,16 @@ export function NewRequisitionModal({
               </div>
               <div className="flex flex-wrap gap-1.5 min-h-[36px] p-2 bg-muted/30 rounded-lg border">
                 {formData.requiredSkills.length === 0 ? (
-                  <span className="text-xs text-muted-foreground italic">No skills added yet. Press Enter or click Add.</span>
+                  <span className="text-xs text-muted-foreground italic">
+                    No skills added yet. Press Enter or click Add.
+                  </span>
                 ) : (
                   formData.requiredSkills.map((skill) => (
-                    <Badge key={skill} variant="secondary" className="gap-1 py-1 px-2 text-xs font-medium">
+                    <Badge
+                      key={skill}
+                      variant="secondary"
+                      className="gap-1 py-1 px-2 text-xs font-medium"
+                    >
                       {skill}
                       <X
                         className="w-3 h-3 cursor-pointer hover:text-destructive"
@@ -542,7 +652,9 @@ export function NewRequisitionModal({
                 rows={4}
                 placeholder="Explain why this position is required, project deliverables, and team impact..."
                 value={formData.justification}
-                onChange={(e) => setFormData({ ...formData, justification: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, justification: e.target.value })
+                }
               />
             </div>
           </div>
@@ -567,7 +679,10 @@ export function NewRequisitionModal({
               <Button
                 type="button"
                 onClick={() => {
-                  if (step === 1 && (!formData.departmentId || !formData.designationId)) {
+                  if (
+                    step === 1 &&
+                    (!formData.departmentId || !formData.designationId)
+                  ) {
                     toast("Department and Designation are required", "error");
                     return;
                   }
@@ -584,7 +699,9 @@ export function NewRequisitionModal({
                   disabled={isSubmitting}
                   onClick={() => handleSave(false)}
                 >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                  ) : null}
                   Save as Draft
                 </Button>
                 <Button
@@ -593,7 +710,11 @@ export function NewRequisitionModal({
                   onClick={() => handleSave(true)}
                   className="bg-primary text-primary-foreground font-semibold"
                 >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle2 className="w-4 h-4 mr-1" />}
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                  )}
                   Save & Submit
                 </Button>
               </>

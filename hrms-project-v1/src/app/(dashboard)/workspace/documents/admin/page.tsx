@@ -323,7 +323,7 @@ export default function EnterpriseAdminDocumentHub() {
                 <Input placeholder="Search employee, document..." className="pl-9 bg-slate-50 border-slate-200" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
               </div>
               
-              <Select value={selectedDept} onValueChange={(val) => val && setSelectedDept(val)}>
+              <Select value={selectedDept} onValueChange={(val) => val && setSelectedDept(String(val))}>
                 <SelectTrigger className="w-[160px] bg-slate-50 border-slate-200"><SelectValue placeholder="Department" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all-dept">All Departments</SelectItem>
@@ -333,7 +333,7 @@ export default function EnterpriseAdminDocumentHub() {
                 </SelectContent>
               </Select>
 
-              <Select value={selectedCategory} onValueChange={(val) => val && setSelectedCategory(val)}>
+              <Select value={selectedCategory} onValueChange={(val) => val && setSelectedCategory(String(val))}>
                 <SelectTrigger className="w-[160px] bg-slate-50 border-slate-200"><SelectValue placeholder="Document Category" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all-type">All Categories</SelectItem>
@@ -344,7 +344,7 @@ export default function EnterpriseAdminDocumentHub() {
                 </SelectContent>
               </Select>
 
-              <Select value={selectedStatus} onValueChange={(val) => val && setSelectedStatus(val)}>
+              <Select value={selectedStatus} onValueChange={(val) => val && setSelectedStatus(String(val))}>
                 <SelectTrigger className="w-[160px] bg-slate-50 border-slate-200"><SelectValue placeholder="Status" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all-status">All Statuses</SelectItem>
@@ -579,7 +579,7 @@ export default function EnterpriseAdminDocumentHub() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Employee</label>
-              <Select value={requestEmployeeId} onValueChange={(val) => val && setRequestEmployeeId(val)} items={employeeSelectItems}>
+              <Select value={requestEmployeeId} onValueChange={(val) => val && setRequestEmployeeId(String(val))} items={employeeSelectItems}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Employee" />
                 </SelectTrigger>
@@ -602,7 +602,7 @@ export default function EnterpriseAdminDocumentHub() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Category</label>
-              <Select value={requestCategory} onValueChange={(val) => val && setRequestCategory(val)}>
+              <Select value={requestCategory} onValueChange={(val) => val && setRequestCategory(String(val))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Category" />
                 </SelectTrigger>

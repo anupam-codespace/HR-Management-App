@@ -20,6 +20,7 @@ import {
   Shield,
   UserCheck,
   LogOut,
+  GraduationCap,
   type LucideIcon,
 } from "lucide-react";
 import { useViewMode } from "@/context/ViewModeContext";
@@ -44,6 +45,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Shield,
   UserCheck,
   LogOut,
+  GraduationCap,
 };
 
 export default function Sidebar({

@@ -23,6 +23,7 @@ import { OnboardingModule } from './onboarding/onboarding.module';
 import { NotificationModule } from './notification/notification.module';
 import { ResignationModule } from './resignation/resignation.module';
 import { RecruitmentModule } from './recruitment/recruitment.module';
+import { TrainingModule } from './training/training.module';
 
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -88,6 +89,7 @@ import { SentryInterceptor } from './common/interceptors/sentry.interceptor';
     NotificationModule,
     ResignationModule,
     RecruitmentModule,
+    TrainingModule,
   ],
   controllers: [AppController],
   providers: [

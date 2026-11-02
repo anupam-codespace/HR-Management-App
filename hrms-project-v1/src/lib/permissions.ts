@@ -21,6 +21,7 @@ import {
   CalendarIcon,
   UserCheck,
   LogOut,
+  GraduationCap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -60,6 +61,14 @@ export const SIDEBAR_MODULES: SidebarModuleDefinition[] = [
     href: "/workspace/recruitment",
     description: "Manpower requisitions, approvals & job vacancies",
     defaultRoles: ["MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"],
+  },
+  {
+    key: "training",
+    label: "Training & Development",
+    icon: GraduationCap,
+    href: "/workspace/training",
+    description: "Universal training plans, competencies & career progression",
+    defaultRoles: ["EMPLOYEE", "MANAGER", "HR_HEAD", "SUPER_ADMIN", "OWNER"],
   },
   {
     key: "employees",

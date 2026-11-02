@@ -71,6 +71,32 @@ model Company {
   holidays         Holiday[]
   payrollRecords   PayrollRecord[]
   leaveBalances    LeaveBalance[]
+  announcements Announcement[]
+  tasks         Task[]
+  designations  Designation[]
+  shiftSwapRequests ShiftSwapRequest[]
+  shiftAssignmentOverrides ShiftAssignmentOverride[]
+
+  onboardingCases     OnboardingCase[]
+  onboardingTemplates OnboardingTemplate[]
+  resignations        ResignationRequest[]
+
+  // Recruitment
+  companySequences     CompanySequence[]
+  manpowerRequisitions ManpowerRequisition[]
+  requisitionApprovals RequisitionApproval[]
+  jobRequisitions      JobRequisition[]
+  candidates           Candidate[]
+  applications         Application[]
+  interviewRounds      InterviewRound[]
+  interviews           Interview[]
+  interviewScorecards  InterviewScorecard[]
+  candidateActivities  CandidateActivity[]
+  jobOffers            JobOffer[]
+  employeeConversions  EmployeeConversion[]
+
+  slug                 String?       @unique
+  status               CompanyStatus @default(PENDING_VERIFICATION)
 }
 
 // 3. The Employee Table (Includes the Administrator)
@@ -118,6 +144,9 @@ model Employee {
   roleId     String?
   customRole Role?   @relation(fields: [roleId], references: [id])
 
+  designationId String?
+  designation   Designation? @relation(fields: [designationId], references: [id], onDelete: SetNull)
+
   // ... rest of your relations ...
   attendanceCorrections AttendanceCorrection[]
   notifications         Notification[]
@@ -135,6 +164,7 @@ model Employee {
   leaveAllocations  LeaveAllocation[]
   leaveRequests     LeaveRequest[]
   leaveTransactions LeaveTransaction[]
+  tasks Task[]
 
   approvedLeaves LeaveRequest[] @relation("ManagerApprovals")
   leaveBalance   LeaveBalance?
@@ -144,6 +174,42 @@ model Employee {
   ifscCode        String?
   panNumber       String?
   nationalId      String? // e.g., Aadhaar, SSN, etc.
+
+  pfAccountNumber String?  // e.g., AA/AAA/0000000/000/0000000
+  uanNumber       String?  // e.g., 101010101010
+
+  reportingManagerId String?
+  reportingManager   Employee?  @relation("ReportingManager", fields: [reportingManagerId], references: [id], onDelete: SetNull)
+  directReports      Employee[] @relation("ReportingManager")
+
+  sentShiftSwaps      ShiftSwapRequest[] @relation("ShiftSwapRequester")
+  receivedShiftSwaps  ShiftSwapRequest[] @relation("ShiftSwapTarget")
+  managedShiftSwaps   ShiftSwapRequest[] @relation("ShiftSwapManager")
+  shiftAssignmentOverrides ShiftAssignmentOverride[]
+
+  employmentStatus EmploymentStatus @default(INVITED)
+  onboardingCase   OnboardingCase?
+  resignations     ResignationRequest[]
+
+  // Recruitment relations
+  requestedRequisitions        ManpowerRequisition[] @relation("RequisitionRequester")
+  replacementRequisitions      ManpowerRequisition[] @relation("RequisitionReplacement")
+  approvedRequisitions         ManpowerRequisition[] @relation("RequisitionApprover")
+  updatedManpowerRequisitions  ManpowerRequisition[] @relation("RequisitionUpdater")
+  performedApprovals           RequisitionApproval[] @relation("ApprovalPerformer")
+  createdJobs                  JobRequisition[]      @relation("JobCreator")
+  approvedJobs                 JobRequisition[]      @relation("JobApprover")
+  updatedJobs                  JobRequisition[]      @relation("JobUpdater")
+  interviewerAssignments       InterviewInterviewer[]
+  scorecards                   InterviewScorecard[]
+  candidateActivities          CandidateActivity[]   @relation("CandidateActivityPerformer")
+  createdJobOffers             JobOffer[]            @relation("JobOfferCreator")
+  approvedJobOffers            JobOffer[]            @relation("JobOfferApprover")
+  managedOfferVersions         JobOfferVersion[]     @relation("OfferReportingManager")
+  reviewedOfferVersions        JobOfferVersion[]     @relation("OfferVersionReviewer")
+  application                  Application?          @relation("ApplicationEmployee")
+  conversions                  EmployeeConversion[]  @relation("EmployeeConversions")
+  performedConversions         EmployeeConversion[]  @relation("ConversionActor")
 }
 
 // 4. Departments (Auto-generated during registration)
@@ -159,6 +225,10 @@ model Department {
   company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   employees Employee[]
   roles     Role[]
+
+  manpowerRequisitions ManpowerRequisition[]
+  jobRequisitions      JobRequisition[]
+  jobOfferVersions     JobOfferVersion[]
 
   createdAt DateTime @default(now())
 }
@@ -180,6 +250,31 @@ model Role {
 
   // --- NEW: Link back to employees ---
   employees Employee[]
+}
+
+model Designation {
+  id                String       @id @default(uuid())
+  companyId         String
+  name              String
+  description       String?
+  baseRole          EmployeeRole @default(EMPLOYEE)
+  color             String       @default("#6366F1")
+  isDefault         Boolean      @default(false)
+  sidebarModules    String[]     @default([])
+  modulePermissions Json         @default("{}")
+  dashboardWidgets  String[]     @default([])
+
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employees Employee[]
+
+  manpowerRequisitions ManpowerRequisition[]
+  jobRequisitions      JobRequisition[]
+  jobOfferVersions     JobOfferVersion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, name])
 }
 
 // 6. Company Settings (From the Setup Wizard)
@@ -225,6 +320,9 @@ model CompanySettings {
   sessionTimeoutHours  Int     @default(24)
   auditLogsEnabled     Boolean @default(true)
 
+  // Resignation & Notice Period Policy
+  noticePeriodDays     Int     @default(30)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -251,6 +349,14 @@ model CompanySettings {
 
   // --- NEW FIELDS FROM WIZARD ---
   themeColor String? @default("#10b981") // Default emerald
+  payslipHeaderUrl String?
+  overtimeIncludesShiftSwaps Boolean @default(false)
+
+  // --- Employee ID Format Configuration ---
+  employeeIdFormat  String? @default("{PREFIX}-{DEPT}-{NUMBER}")
+  employeeIdPrefix  String?
+  employeeIdDigits  Int     @default(3)
+  employeeIdCounter Int     @default(1)
 }
 
 model Attendance {
@@ -282,6 +388,11 @@ model Attendance {
 
   // Link to corrections
   corrections AttendanceCorrection[]
+
+  shiftId            String?
+  shift              Shift?             @relation(fields: [shiftId], references: [id])
+  shiftSwapRequestId String?
+  shiftSwapRequest   ShiftSwapRequest?  @relation(fields: [shiftSwapRequestId], references: [id])
 
   @@index([employeeId, companyId, date])
 }
@@ -356,6 +467,12 @@ model Shift {
   schedules    Schedule[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+
+  attendances            Attendance[]
+  requesterOriginalSwaps ShiftSwapRequest[]        @relation("RequesterOriginalShift")
+  targetSwaps            ShiftSwapRequest[]        @relation("TargetShift")
+  overrideOriginals      ShiftAssignmentOverride[] @relation("OverrideOriginalShift")
+  overrideShifts         ShiftAssignmentOverride[] @relation("OverrideShift")
 }
 
 model Schedule {
@@ -447,6 +564,58 @@ model EmployeeExit {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ==========================================
+// RESIGNATION & OFFBOARDING WORKFLOW
+// ==========================================
+
+enum ResignationStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  WITHDRAWN
+  COMPLETED
+}
+
+model ResignationRequest {
+  id         String   @id @default(uuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  submissionDate          DateTime @default(now())
+  requestedLastWorkingDay DateTime
+  approvedLastWorkingDay  DateTime?
+  noticePeriodDays        Int      @default(30)
+
+  reason                  String   // e.g. BETTER_OPPORTUNITY, CAREER_CHANGE, HIGHER_STUDIES, RELOCATION, PERSONAL_REASONS, HEALTH, OTHER
+  reasonDetails           String?  @db.Text
+
+  status                  ResignationStatus @default(PENDING)
+
+  // Manager Review
+  managerId               String?
+  managerDecision         String?  // APPROVED, REJECTED, NEGOTIATING
+  managerComment          String?  @db.Text
+  managerDecisionDate     DateTime?
+
+  // HR Review
+  hrId                    String?
+  hrDecision              String?  // APPROVED, REJECTED
+  hrComment               String?  @db.Text
+  hrDecisionDate          DateTime?
+
+  // Exit & Clearance
+  exitInterviewNotes      String?  @db.Text
+  clearanceChecklist      Json     @default("{\"assets\": {\"completed\": false, \"notes\": \"\"}, \"it\": {\"completed\": false, \"notes\": \"\"}, \"finance\": {\"completed\": false, \"notes\": \"\"}, \"hr\": {\"completed\": false, \"notes\": \"\"}}")
+  rejectionReason         String?
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 }
 
 // ==========================================
@@ -553,10 +722,14 @@ model SalaryStructure {
   basicSalary     Float // Base pay
   hra             Float @default(0) // House Rent Allowance
   otherAllowances Float @default(0) // Fixed monthly allowances
+  conveyanceAllowance Float    @default(0) // NEW
+  medicalAllowance    Float    @default(0) // NEW
+  specialAllowance    Float    @default(0) // NEW
 
   // Deductions
   pfContribution Float @default(0) // Provident Fund / Retirement
   taxDeduction   Float @default(0) // Standard Tax / TDS
+  professionalTax     Float    @default(0) // NEW
 
   effectiveDate DateTime @default(now())
 
@@ -658,6 +831,11 @@ model Document {
   // ✅ NEW: Added for HR Document Requests
   dueDate        DateTime?
   requestMessage String?   @db.Text
+
+  onboardingCaseId String?
+  onboardingCase OnboardingCase? @relation(fields: [onboardingCaseId], references: [id], onDelete: Cascade)
+
+
 }
 
 // ==========================================
@@ -791,3 +969,833 @@ model LeaveRequest {
   managerId String?
   manager   Employee? @relation("ManagerApprovals", fields: [managerId], references: [id]) // ✅ ADD THIS LINE
 }
+
+// ==========================================
+// --- SALARY TEMPLATE MODULE ---
+// ==========================================
+model SalaryTemplate {
+  id                  String   @id @default(uuid())
+  companyId           String
+  name                String   // e.g., "Software Engineer - Grade A"
+  description         String?
+
+  // Rules (Percentages of CTC)
+  basicPercentOfCtc   Float    @default(40)
+  hraPercentOfCtc     Float    @default(20)
+  
+  // Formulas
+  pfPercentOfBasic    Float    @default(12) // Standard Employer PF is 12% of Basic
+
+  // Fixed Monthly Allowances/Deductions
+  conveyanceFixed     Float    @default(1600)
+  isConveyancePercent Boolean  @default(false)
+  medicalFixed        Float    @default(1250)
+  isMedicalPercent    Boolean  @default(false)
+  profTaxFixed        Float    @default(200)
+  isProfTaxPercent    Boolean  @default(false)
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+
+model Announcement {
+  id        String   @id @default(uuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title     String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  title       String
+  description String?  @db.Text
+  status      String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  onboardingCaseId String?
+  onboardingCase OnboardingCase? @relation(fields: [onboardingCaseId], references: [id], onDelete: Cascade)
+
+  source TaskSource @default(MANUAL)
+  requiredForActivation Boolean @default(false)
+}
+
+enum ShiftSwapStatus {
+  PENDING_EMPLOYEE
+  PENDING_MANAGER
+  APPROVED
+  REJECTED_BY_EMPLOYEE
+  REJECTED_BY_MANAGER
+  CANCELLED
+  EXPIRED
+}
+
+enum OverrideSource {
+  SHIFT_SWAP
+  MANAGER_DIRECT
+}
+
+model ShiftSwapRequest {
+  id                      String           @id @default(uuid())
+  companyId               String
+  company                 Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  requesterEmployeeId     String
+  requester               Employee         @relation("ShiftSwapRequester", fields: [requesterEmployeeId], references: [id], onDelete: Cascade)
+  targetEmployeeId        String
+  target                  Employee         @relation("ShiftSwapTarget", fields: [targetEmployeeId], references: [id], onDelete: Cascade)
+  date                    DateTime
+  requesterOriginalShiftId String?
+  requesterOriginalShift   Shift?           @relation("RequesterOriginalShift", fields: [requesterOriginalShiftId], references: [id])
+  targetShiftId           String
+  targetShift             Shift            @relation("TargetShift", fields: [targetShiftId], references: [id])
+  
+  // Snapshots of the target's original shift at creation time
+  originalShiftId         String
+  originalShiftName       String
+  originalShiftStart      String
+  originalShiftEnd        String
+
+  reason                  String?
+  status                  ShiftSwapStatus  @default(PENDING_EMPLOYEE)
+  targetEmployeeResponse  String?          // ACCEPTED, REJECTED
+  managerId               String?
+  manager                 Employee?        @relation("ShiftSwapManager", fields: [managerId], references: [id])
+  managerResponse         String?          // APPROVED, REJECTED
+  approvedAt              DateTime?
+  
+  // Cancellation request flow
+  cancellationRequested   Boolean          @default(false)
+  cancellationReason      String?
+  cancellationTargetAck   Boolean          @default(false)
+  cancellationRequestedAt DateTime?
+
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+
+  shiftAssignmentOverrides ShiftAssignmentOverride[]
+  attendances              Attendance[]
+}
+
+model ShiftAssignmentOverride {
+  id                   String         @id @default(uuid())
+  companyId            String
+  company              Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employeeId           String
+  employee             Employee       @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date                 DateTime
+  originalShiftId      String?
+  originalShift        Shift?         @relation("OverrideOriginalShift", fields: [originalShiftId], references: [id])
+  overrideShiftId      String?        // Null if it's a day off or "shift given" (no work expected)
+  overrideShift        Shift?         @relation("OverrideShift", fields: [overrideShiftId], references: [id])
+  source               OverrideSource @default(SHIFT_SWAP)
+  relatedSwapRequestId String?
+  relatedSwapRequest   ShiftSwapRequest? @relation(fields: [relatedSwapRequestId], references: [id], onDelete: Cascade)
+  status               String         @default("ACTIVE") // ACTIVE, CANCELLED
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  @@unique([employeeId, date])
+}
+
+enum EmploymentStatus {
+  INVITED
+  ONBOARDING
+  ACTIVE
+  NOTICE_PERIOD
+  TERMINATED
+  RESIGNED
+}
+
+enum OnboardingStatus {
+  INVITED
+  OFFER_ACCEPTED
+  IN_PROGRESS
+  PENDING_VERIFICATION
+  COMPLETED
+}
+
+enum TaskSource {
+  TEMPLATE
+  AD_HOC
+  MANUAL
+}
+
+model OnboardingTemplate {
+  id                String           @id @default(uuid())
+  companyId         String
+  company           Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name              String
+  departmentId      String?
+  roleId            String?
+
+  taskChecklist     Json             @default("[]")
+  documentChecklist Json             @default("[]")
+
+  cases             OnboardingCase[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+}
+
+model OnboardingCase {
+  id                String             @id @default(uuid())
+  companyId         String
+  company           Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employeeId        String             @unique
+  employee          Employee           @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  templateId        String?
+  template          OnboardingTemplate? @relation(fields: [templateId], references: [id], onDelete: Restrict)
+
+  status            OnboardingStatus   @default(INVITED)
+  offerSigned       Boolean            @default(false)
+  bgvStatus         String             @default("PENDING")
+
+  tasks             Task[]
+  documents         Document[]
+
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+// =======================================================
+// RECRUITMENT MODULE (Phase 1 & Phase 2)
+// =======================================================
+
+enum CompanyStatus {
+  PENDING_VERIFICATION
+  VERIFIED
+  SUSPENDED
+}
+
+enum ApplicationStatus {
+  APPLIED
+  SCREENING
+  SHORTLISTED
+  INTERVIEW
+  SELECTED
+  OFFER
+  OFFER_ACCEPTED
+  HIRED
+  REJECTED
+  WITHDRAWN
+  ON_HOLD
+}
+
+enum InterviewRoundType {
+  HR
+  TECHNICAL
+  MANAGER
+  ASSESSMENT
+  LEADERSHIP
+  CULTURE
+  OTHER
+}
+
+enum InterviewMode {
+  IN_PERSON
+  GOOGLE_MEET
+  MS_TEAMS
+  PHONE
+  OTHER
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+  NO_SHOW
+}
+
+enum InterviewerRole {
+  PRIMARY
+  PANEL
+  OBSERVER
+}
+
+enum ScorecardRecommendation {
+  STRONG_YES
+  YES
+  NEUTRAL
+  NO
+  STRONG_NO
+}
+
+enum CandidateActivityType {
+  APPLICATION_CREATED
+  STATUS_CHANGED
+  INTERVIEW_SCHEDULED
+  INTERVIEW_RESCHEDULED
+  INTERVIEW_CANCELLED
+  INTERVIEW_COMPLETED
+  SCORECARD_SUBMITTED
+  CANDIDATE_SELECTED
+  CANDIDATE_REJECTED
+  OFFER_CREATED
+  OFFER_REVISED
+  OFFER_SUBMITTED_FOR_APPROVAL
+  OFFER_APPROVED
+  OFFER_REJECTED
+  OFFER_SENT
+  OFFER_ACCEPTED
+  OFFER_DECLINED
+  OFFER_WITHDRAWN
+  OFFER_EXPIRED
+  CANDIDATE_CONVERSION_STARTED
+  EMPLOYEE_CREATED
+  PAYROLL_ACTIVATED
+  ONBOARDING_STARTED
+  CANDIDATE_HIRED
+}
+
+enum RequisitionStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum RequisitionApprovalAction {
+  SUBMITTED
+  UNDER_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum HiringReason {
+  NEW_POSITION
+  REPLACEMENT
+  EXPANSION
+}
+
+enum DirectJobReason {
+  DIRECT_HIRE
+  REPLACEMENT
+  EMERGENCY_HIRE
+  INTERNAL_POSITION
+}
+
+enum JobRequisitionStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  PUBLISHED
+  PAUSED
+  CLOSED
+  CANCELLED
+}
+
+enum WorkplaceType {
+  ON_SITE
+  HYBRID
+  REMOTE
+}
+
+enum RecruitmentEmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+}
+
+model CompanySequence {
+  id           String   @id @default(uuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  entityType   String   // "MANPOWER_REQUISITION" | "JOB_REQUISITION"
+  year         Int
+  currentValue Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([companyId, entityType, year])
+  @@index([companyId])
+}
+
+model ManpowerRequisition {
+  id                  String                    @id @default(uuid())
+  companyId           String
+  company             Company                   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  requisitionNumber   String
+
+  departmentId        String
+  department          Department                @relation(fields: [departmentId], references: [id])
+  designationId       String
+  designation         Designation               @relation(fields: [designationId], references: [id])
+
+  requestedById       String
+  requestedBy         Employee                  @relation("RequisitionRequester", fields: [requestedById], references: [id])
+
+  positionsCount      Int                       @default(1)
+  employmentType      RecruitmentEmploymentType @default(FULL_TIME)
+  location            String?
+  hiringReason        HiringReason              @default(NEW_POSITION)
+  replacementForId    String?
+  replacementFor      Employee?                 @relation("RequisitionReplacement", fields: [replacementForId], references: [id])
+
+  requiredSkills      String[]                  @default([])
+  minExperienceYears  Float                     @default(0)
+  maxExperienceYears  Float?
+  minSalary           Decimal?                  @db.Decimal(12, 2)
+  maxSalary           Decimal?                  @db.Decimal(12, 2)
+  currency            String                    @default("INR")
+  expectedJoiningDate DateTime?
+  justification       String?                   @db.Text
+
+  // State machine snapshot
+  status              RequisitionStatus         @default(DRAFT)
+  isBudgeted          Boolean                   @default(true)
+  budgetAmount        Decimal?                  @db.Decimal(12, 2)
+  approvedById        String?
+  approvedBy          Employee?                 @relation("RequisitionApprover", fields: [approvedById], references: [id])
+  approvedAt          DateTime?
+
+  updatedById         String?
+  updatedBy           Employee?                 @relation("RequisitionUpdater", fields: [updatedById], references: [id])
+
+  approvals           RequisitionApproval[]
+  jobRequisitions     JobRequisition[]
+
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+
+  @@unique([companyId, requisitionNumber])
+  @@index([companyId, status])
+}
+
+model RequisitionApproval {
+  id            String                    @id @default(uuid())
+  companyId     String
+  company       Company                   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  requisitionId String
+  requisition   ManpowerRequisition       @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+  action        RequisitionApprovalAction
+  performedById String
+  performedBy   Employee                  @relation("ApprovalPerformer", fields: [performedById], references: [id])
+  comments      String?                   @db.Text
+  budgetAmount  Decimal?                  @db.Decimal(12, 2)
+  createdAt     DateTime                  @default(now())
+
+  @@index([companyId, requisitionId])
+}
+
+model JobRequisition {
+  id                          String                    @id @default(uuid())
+  companyId                   String
+  company                     Company                   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  jobCode                     String
+
+  manpowerRequisitionId       String?
+  manpowerRequisition         ManpowerRequisition?      @relation(fields: [manpowerRequisitionId], references: [id], onDelete: SetNull)
+  directHiringReason          DirectJobReason?
+  directHiringJustification   String?                   @db.Text
+
+  title                       String
+  departmentId                String
+  department                  Department                @relation(fields: [departmentId], references: [id])
+  designationId               String?
+  designation                 Designation?              @relation(fields: [designationId], references: [id])
+
+  location                    String
+  workplaceType               WorkplaceType             @default(ON_SITE)
+  employmentType              RecruitmentEmploymentType @default(FULL_TIME)
+
+  openings                    Int                       @default(1)
+  filledCount                 Int                       @default(0)
+
+  description                 String                    @db.Text
+  responsibilities            String                    @db.Text
+  requirements                String                    @db.Text
+  skills                      String[]                  @default([])
+  screeningQuestions          Json                      @default("[]")
+
+  salaryMin                   Decimal?                  @db.Decimal(12, 2)
+  salaryMax                   Decimal?                  @db.Decimal(12, 2)
+  showSalaryRange             Boolean                   @default(false)
+  applicationDeadline         DateTime?
+
+  status                      JobRequisitionStatus      @default(DRAFT)
+  createdById                 String
+  createdBy                   Employee                  @relation("JobCreator", fields: [createdById], references: [id])
+
+  approvedById                String?
+  approvedBy                  Employee?                 @relation("JobApprover", fields: [approvedById], references: [id])
+  approvedAt                  DateTime?
+  publishedAt                 DateTime?
+
+  updatedById                 String?
+  updatedBy                   Employee?                 @relation("JobUpdater", fields: [updatedById], references: [id])
+
+  applications                Application[]
+  interviewRounds             InterviewRound[]
+  jobOffers                   JobOffer[]
+
+  createdAt                   DateTime                  @default(now())
+  updatedAt                   DateTime                  @updatedAt
+
+  @@unique([companyId, jobCode])
+  @@index([companyId, status])
+}
+
+model Candidate {
+  id                   String        @id @default(uuid())
+  companyId            String
+  company              Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  firstName            String
+  lastName             String
+  email                String
+  phone                String?
+  currentCompany       String?
+  currentTitle         String?
+  totalExperienceYears Float?
+  currentLocation      String?
+
+  linkedinUrl          String?
+  portfolioUrl         String?
+
+  resumeUrl            String?
+  resumeFileName       String?
+
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  applications         Application[]
+  jobOffers            JobOffer[]
+  conversions          EmployeeConversion[]
+
+  @@unique([companyId, email])
+  @@index([companyId])
+}
+
+model Application {
+  id                String            @id @default(uuid())
+  companyId         String
+  company           Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  jobRequisitionId  String
+  jobRequisition    JobRequisition    @relation(fields: [jobRequisitionId], references: [id], onDelete: Cascade)
+
+  candidateId       String
+  candidate         Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  applicationNumber String
+
+  status            ApplicationStatus @default(APPLIED)
+
+  screeningAnswers  Json              @default("[]")
+  coverLetter       String?           @db.Text
+
+  resumeUrl         String?
+
+  source            String            @default("GLOBIZHUB_CAREERS")
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  interviews        Interview[]
+  activities        CandidateActivity[]
+  jobOffer          JobOffer?
+  employeeId        String?           @unique
+  employee          Employee?         @relation("ApplicationEmployee", fields: [employeeId], references: [id])
+  conversion        EmployeeConversion?
+
+  @@unique([jobRequisitionId, candidateId])
+  @@index([companyId, status])
+  @@index([companyId, jobRequisitionId])
+}
+
+// =======================================================
+// PHASE 3: INTERVIEW & EVALUATION MODELS
+// =======================================================
+
+model InterviewRound {
+  id               String              @id @default(uuid())
+  companyId        String
+  company          Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  jobRequisitionId String
+  jobRequisition   JobRequisition      @relation(fields: [jobRequisitionId], references: [id], onDelete: Cascade)
+  name             String
+  type             InterviewRoundType  @default(TECHNICAL)
+  sequence         Int                 @default(1)
+  durationMinutes  Int                 @default(60)
+  isRequired       Boolean             @default(true)
+  isActive         Boolean             @default(true)
+  description      String?             @db.Text
+
+  criteria         ScorecardCriterion[]
+  interviews       Interview[]
+
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([companyId, jobRequisitionId])
+}
+
+model ScorecardCriterion {
+  id               String              @id @default(uuid())
+  interviewRoundId String
+  interviewRound   InterviewRound      @relation(fields: [interviewRoundId], references: [id], onDelete: Cascade)
+  name             String
+  description      String?             @db.Text
+  weight           Float               @default(1.0)
+  maxRating        Int                 @default(5)
+  sequence         Int                 @default(1)
+
+  evaluations      ScorecardEvaluation[]
+
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([interviewRoundId])
+}
+
+model Interview {
+  id               String              @id @default(uuid())
+  companyId        String
+  company          Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applicationId    String
+  application      Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  interviewRoundId String
+  interviewRound   InterviewRound      @relation(fields: [interviewRoundId], references: [id], onDelete: Restrict)
+
+  scheduledAt      DateTime
+  durationMinutes  Int                 @default(60)
+  timezone         String              @default("Asia/Kolkata")
+  mode             InterviewMode       @default(GOOGLE_MEET)
+  meetingLink      String?
+  location         String?
+  notes            String?             @db.Text
+  status           InterviewStatus     @default(SCHEDULED)
+
+  interviewers     InterviewInterviewer[]
+  scorecards       InterviewScorecard[]
+
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([companyId, applicationId])
+  @@index([companyId, scheduledAt])
+}
+
+model InterviewInterviewer {
+  id          String          @id @default(uuid())
+  interviewId String
+  interview   Interview       @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  employeeId  String
+  employee    Employee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  role        InterviewerRole @default(PANEL)
+
+  createdAt   DateTime        @default(now())
+
+  @@unique([interviewId, employeeId])
+  @@index([employeeId])
+}
+
+model InterviewScorecard {
+  id             String                  @id @default(uuid())
+  companyId      String
+  company        Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  interviewId    String
+  interview      Interview               @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewerId  String
+  interviewer    Employee                @relation(fields: [interviewerId], references: [id], onDelete: Cascade)
+
+  overallRating  Float?
+  recommendation ScorecardRecommendation?
+  strengths      String?                 @db.Text
+  concerns       String?                 @db.Text
+  privateNotes   String?                 @db.Text
+  sharedFeedback String?                 @db.Text
+  isSubmitted    Boolean                 @default(false)
+  submittedAt    DateTime?
+
+  evaluations    ScorecardEvaluation[]
+
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  @@unique([interviewId, interviewerId])
+  @@index([companyId, interviewId])
+}
+
+model ScorecardEvaluation {
+  id          String             @id @default(uuid())
+  scorecardId String
+  scorecard   InterviewScorecard @relation(fields: [scorecardId], references: [id], onDelete: Cascade)
+  criterionId String
+  criterion   ScorecardCriterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+  rating      Float
+  comment     String?            @db.Text
+
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@unique([scorecardId, criterionId])
+}
+
+model CandidateActivity {
+  id            String                @id @default(uuid())
+  companyId     String
+  company       Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applicationId String
+  application   Application           @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  type          CandidateActivityType
+  title         String
+  description   String?               @db.Text
+  performedById String?
+  performedBy   Employee?             @relation("CandidateActivityPerformer", fields: [performedById], references: [id], onDelete: SetNull)
+  metadata      Json?
+
+  createdAt     DateTime              @default(now())
+
+  @@index([companyId, applicationId])
+}
+
+// =======================================================
+// PHASE 4: JOB OFFER MANAGEMENT & REVISION SNAPSHOTS
+// =======================================================
+
+enum OfferStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  SENT
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  WITHDRAWN
+}
+
+model JobOffer {
+  id               String            @id @default(uuid())
+  companyId        String
+  company          Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applicationId    String            @unique
+  application      Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  candidateId      String
+  candidate        Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobRequisitionId String
+  jobRequisition   JobRequisition    @relation(fields: [jobRequisitionId], references: [id], onDelete: Cascade)
+
+  offerCode        String            // e.g. OFFER-2026-0001
+  currentVersion   Int               @default(1)
+  status           OfferStatus       @default(DRAFT)
+
+  createdById      String
+  createdBy        Employee          @relation("JobOfferCreator", fields: [createdById], references: [id])
+  approvedById     String?
+  approvedBy       Employee?         @relation("JobOfferApprover", fields: [approvedById], references: [id])
+  approvedAt       DateTime?
+  sentAt           DateTime?
+  respondedAt      DateTime?
+  declineReason    String?           @db.Text
+  withdrawalReason String?           @db.Text
+
+  versions         JobOfferVersion[]
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@unique([companyId, offerCode])
+  @@index([companyId, status])
+  @@index([companyId, applicationId])
+}
+
+model JobOfferVersion {
+  id                      String            @id @default(uuid())
+  jobOfferId              String
+  jobOffer                JobOffer          @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+  version                 Int
+  status                  OfferStatus       @default(DRAFT)
+
+  // Monthly Earnings (100% Payroll SalaryStructure Parity)
+  basicSalary             Float
+  hra                     Float             @default(0)
+  conveyanceAllowance     Float             @default(0)
+  medicalAllowance        Float             @default(0)
+  specialAllowance        Float             @default(0)
+  otherAllowances         Float             @default(0)
+  grossMonthly            Float
+
+  // Monthly Deductions (100% Payroll SalaryStructure Parity)
+  pfContribution          Float             @default(0)
+  taxDeduction            Float             @default(0)
+  professionalTax         Float             @default(0)
+  netMonthly              Float
+
+  // Annual Totals & Incentives
+  annualBaseSalary        Float
+  annualGross             Float
+  annualPerformanceBonus  Float             @default(0)
+  joiningBonus            Float             @default(0)
+  totalCtc                Float
+
+  // Budget Exception
+  isBudgetException       Boolean           @default(false)
+  budgetJustification     String?           @db.Text
+
+  // Offer Terms
+  departmentId            String?
+  department              Department?       @relation(fields: [departmentId], references: [id])
+  designationId           String?
+  designation             Designation?      @relation(fields: [designationId], references: [id])
+  joiningDate             DateTime
+  expiryDate              DateTime
+  probationDurationMonths Int               @default(3)
+  noticePeriodDays        Int               @default(30)
+  reportingManagerId      String?
+  reportingManager        Employee?         @relation("OfferReportingManager", fields: [reportingManagerId], references: [id])
+  workplaceType           WorkplaceType     @default(ON_SITE)
+  termsAndConditions      String?           @db.Text
+
+  // Review & Revision Audit
+  revisionReason          String?           @db.Text
+  reviewNotes             String?           @db.Text
+  reviewedById            String?
+  reviewedBy              Employee?         @relation("OfferVersionReviewer", fields: [reviewedById], references: [id])
+  reviewedAt              DateTime?
+
+  createdAt               DateTime          @default(now())
+
+  @@unique([jobOfferId, version])
+  @@index([jobOfferId])
+}
+
+// =======================================================
+// PHASE 5: EMPLOYEE CONVERSION & IDEMPOTENCY AUDIT
+// =======================================================
+
+model EmployeeConversion {
+  id            String      @id @default(uuid())
+  companyId     String
+  company       Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applicationId String      @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  candidateId   String
+  candidate     Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  employeeId    String      @unique
+  employee      Employee    @relation("EmployeeConversions", fields: [employeeId], references: [id], onDelete: Cascade)
+  convertedById String
+  convertedBy   Employee    @relation("ConversionActor", fields: [convertedById], references: [id])
+  convertedAt   DateTime    @default(now())
+
+  @@index([companyId])
+}
++

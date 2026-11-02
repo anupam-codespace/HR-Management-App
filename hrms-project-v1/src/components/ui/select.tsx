@@ -6,7 +6,62 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+interface SelectContextType {
+  itemsMap: Map<string, React.ReactNode>;
+  registerItem: (value: string, label: React.ReactNode) => void;
+}
+
+const SelectContext = React.createContext<SelectContextType>({
+  itemsMap: new Map(),
+  registerItem: () => {},
+});
+
+function extractItemsFromChildren(
+  children: React.ReactNode,
+  map = new Map<string, React.ReactNode>()
+): Map<string, React.ReactNode> {
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement(child)) return;
+    const props = child.props as any;
+    if (props) {
+      if (props.value !== undefined && props.children !== undefined) {
+        map.set(String(props.value), props.children);
+      }
+      if (props.children) {
+        extractItemsFromChildren(props.children, map);
+      }
+    }
+  });
+  return map;
+}
+
+function Select<Value = any, Multiple extends boolean | undefined = false>({
+  children,
+  ...props
+}: SelectPrimitive.Root.Props<Value, Multiple>) {
+  const [dynamicMap, setDynamicMap] = React.useState<Map<string, React.ReactNode>>(() => new Map());
+
+  const registerItem = React.useCallback((val: string, label: React.ReactNode) => {
+    setDynamicMap((prev) => {
+      if (prev.get(val) === label) return prev;
+      const next = new Map(prev);
+      next.set(val, label);
+      return next;
+    });
+  }, []);
+
+  const itemsMap = React.useMemo(() => {
+    const map = extractItemsFromChildren(children);
+    dynamicMap.forEach((v, k) => map.set(k, v));
+    return map;
+  }, [children, dynamicMap]);
+
+  return (
+    <SelectContext.Provider value={{ itemsMap, registerItem }}>
+      <SelectPrimitive.Root<Value, Multiple> {...props}>{children}</SelectPrimitive.Root>
+    </SelectContext.Provider>
+  );
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
@@ -18,13 +73,33 @@ function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   )
 }
 
-function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
+function SelectValue({ className, children, placeholder, ...props }: SelectPrimitive.Value.Props) {
+  const { itemsMap } = React.useContext(SelectContext);
+
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
       className={cn("flex flex-1 text-left", className)}
+      placeholder={placeholder}
       {...props}
-    />
+    >
+      {(val: any) => {
+        if (typeof children === "function") {
+          return children(val);
+        }
+        if (children != null) {
+          return children;
+        }
+        if (val !== null && val !== undefined && val !== "") {
+          const stringVal = String(val);
+          if (itemsMap.has(stringVal)) {
+            return itemsMap.get(stringVal);
+          }
+          return val;
+        }
+        return placeholder;
+      }}
+    </SelectPrimitive.Value>
   )
 }
 
@@ -113,6 +188,14 @@ function SelectItem({
   children,
   ...props
 }: SelectPrimitive.Item.Props) {
+  const { registerItem } = React.useContext(SelectContext);
+
+  React.useEffect(() => {
+    if (props.value !== undefined && children !== undefined) {
+      registerItem(String(props.value), children);
+    }
+  }, [registerItem, props.value, children]);
+
   return (
     <SelectPrimitive.Item
       data-slot="select-item"

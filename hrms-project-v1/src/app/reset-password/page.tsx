@@ -35,8 +35,8 @@ function ResetPasswordForm() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
       return;
     }
 
@@ -55,7 +55,11 @@ function ResetPasswordForm() {
       }, 3000);
 
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to reset password. The token may have expired.");
+      const apiMessage = err.response?.data?.message;
+      const message = Array.isArray(apiMessage)
+        ? apiMessage.join(', ')
+        : (typeof apiMessage === 'string' ? apiMessage : "Failed to reset password. The token may have expired.");
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -65,9 +69,9 @@ function ResetPasswordForm() {
     return (
       <div className="text-center space-y-4">
         <p className="text-rose-500 font-medium">Invalid or missing reset token.</p>
-        <Link href="/forgot-password" className="cursor-pointer">
-          <Button variant="outline" className="cursor-pointer">Request a new link</Button>
-        </Link>
+        <Button asChild variant="outline" className="cursor-pointer">
+          <Link href="/forgot-password">Request a new link</Link>
+        </Button>
       </div>
     );
   }
