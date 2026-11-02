@@ -14,8 +14,10 @@ export class EmailService {
 
   async sendPasswordResetEmail(email: string, resetUrl: string) {
     try {
-      await this.resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'noreply@yourdomain.com', // Must be a verified domain in your Resend dashboard
+      const fromEmail =
+        process.env.RESEND_FROM_EMAIL || 'TeamHub HRMS <onboarding@resend.dev>';
+      const { data, error } = await this.resend.emails.send({
+        from: fromEmail,
         to: email,
         subject: 'Reset Your Password - HRMS',
         html: `
@@ -34,12 +36,23 @@ export class EmailService {
           </div>
         `,
       });
+
+      if (error) {
+        console.error('❌ Failed to send password reset email via Resend:', error);
+        throw new InternalServerErrorException(
+          error.message || 'Failed to send email',
+        );
+      }
+
       console.log(`✅ Password reset email sent to ${email}`);
     } catch (error) {
       console.error(
         '❌ Failed to send password reset email via Resend:',
         error,
       );
+      if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
       throw new InternalServerErrorException('Failed to send email');
     }
   }
@@ -54,7 +67,7 @@ export class EmailService {
     const fromEmail =
       process.env.RESEND_FROM_EMAIL || 'TeamHub HRMS <onboarding@resend.dev>';
     try {
-      await this.resend.emails.send({
+      const { data, error } = await this.resend.emails.send({
         from: fromEmail,
         to: email,
         subject: 'Welcome to the Team! Set your password',
@@ -69,7 +82,12 @@ export class EmailService {
           </div>
         `,
       });
-      console.log(`✅ Onboarding invitation email sent to ${email}`);
+
+      if (error) {
+        console.error('❌ Resend API returned error for employee invitation:', error);
+      } else {
+        console.log(`✅ Onboarding invitation email sent to ${email}`);
+      }
     } catch (emailError) {
       console.error(
         '❌ Failed to send onboarding invitation email via Resend:',

@@ -6,8 +6,10 @@ import Link from "next/link";
 import { Loader2, Users, UserCheck, UserX, Clock, Settings, Calendar, ShieldCheck, Activity, Megaphone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { AttendanceWidget } from "@/components/dashboard/AttendanceWidget";
 import { usePermissions } from "@/context/PermissionContext";
+import { BroadcastNotificationModal } from "@/components/notifications/BroadcastNotificationModal";
 
 export function AdminDashboardView() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -98,9 +100,18 @@ export function AdminDashboardView() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 font-sans">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Here is what is happening across your workspace today.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Here is what is happening across your workspace today.</p>
+        </div>
+        <BroadcastNotificationModal
+          trigger={
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9 shadow-sm shrink-0">
+              <Megaphone className="w-4 h-4 mr-2" /> Broadcast Notification
+            </Button>
+          }
+        />
       </div>
 
       {/* STAT CARDS ROW */}

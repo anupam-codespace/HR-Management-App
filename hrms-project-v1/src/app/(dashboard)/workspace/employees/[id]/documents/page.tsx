@@ -13,7 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { TableSkeleton } from "@/components/skeletons";
 
 export default function AdminEmployeeDocumentsPage() {
   const params = useParams();
@@ -65,13 +64,7 @@ export default function AdminEmployeeDocumentsPage() {
     }
   });
 
-  if (isLoading) {
-    return (
-      <div className="p-8 max-w-5xl mx-auto">
-        <TableSkeleton rowCount={5} columnCount={4} title="Employee Documents" subtitle="Manage compliance and employment records." showAvatar={false} />
-      </div>
-    );
-  }
+  if (isLoading) return <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-indigo-500" /></div>;
 
   const complianceDocs = documents?.filter((d: any) => d.category === "COMPLIANCE") || [];
   const employmentDocs = documents?.filter((d: any) => d.category === "EMPLOYMENT") || [];

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useQuery,useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -12,8 +12,16 @@ import {
   User,
   Shield,
   Menu,
-  Check, Trash,
-  Sun, Moon
+  Check,
+  Trash,
+  Sun,
+  Moon,
+  Megaphone,
+  AlertTriangle,
+  Calendar,
+  Clock,
+  FileText,
+  Trash2,
 } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
@@ -59,9 +67,13 @@ export default function Header() {
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
     if (token) {
       try {
-        await axios.post(`${API_URL}/auth/logout`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.post(
+          `${API_URL}/auth/logout`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
       } catch (err) {
         console.error("Failed to log logout action on backend", err);
       }
@@ -73,7 +85,6 @@ export default function Header() {
 
   const getInitials = (firstName?: string, lastName?: string) => {
     if (!firstName) return "U";
-
     return `${firstName.charAt(0)}${lastName?.charAt(0) || ""}`.toUpperCase();
   };
 
@@ -96,24 +107,24 @@ export default function Header() {
 
   const formatBreadcrumb = () => {
     const paths = pathname.split("/").filter(Boolean);
-
     if (paths.length < 2) return "Dashboard";
-
     const current = paths[paths.length - 1];
-
     return current
       .split("-")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
   };
 
-  // Indigo border on top of header for visual distinction when in Manager Mode
   const isManagerMode = user?.role === "MANAGER" && !isViewAsUser;
 
   return (
-    <header className={`flex items-center justify-between h-16 px-6 bg-card border-b border-border transition-all ${isManagerMode ? "border-t-2 border-t-primary" : ""}`}>
+    <header
+      className={`flex items-center justify-between h-16 px-6 bg-card border-b border-border transition-all ${
+        isManagerMode ? "border-t-2 border-t-primary" : ""
+      }`}
+    >
       <div className="flex items-center space-x-4">
-        {/* Small and medium screens: open the sidebar as a drawer. */}
+        {/* Small and medium screens: open the sidebar as a drawer */}
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger
             className="inline-flex rounded-md p-2 transition-colors hover:bg-primary/10 lg:hidden"
@@ -121,7 +132,10 @@ export default function Header() {
           >
             <Menu className="h-5 w-5" />
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-64 data-[side=left]:w-64 data-[side=left]:sm:max-w-64">
+          <SheetContent
+            side="left"
+            className="p-0 w-64 data-[side=left]:w-64 data-[side=left]:sm:max-w-64"
+          >
             <Sidebar role={activeRole} className="flex h-full" />
           </SheetContent>
         </Sheet>
@@ -139,7 +153,6 @@ export default function Header() {
         {/* Search */}
         <form onSubmit={submitSearch} className="hidden md:block relative w-72" role="search">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground/60" />
-
           <Input
             ref={searchInputRef}
             placeholder="Search employees... (Ctrl + K)"
@@ -164,7 +177,7 @@ export default function Header() {
                 Manager Mode
               </span>
             )}
-            
+
             <button
               onClick={() => setIsViewAsUser(!isViewAsUser)}
               className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
@@ -194,31 +207,30 @@ export default function Header() {
           )}
         </button>
 
-        {/* Notification Dropdown */}
+        {/* Notifications Dropdown */}
         <DropdownMenu>
-          {/* Removed asChild and Button. Applied styles directly to the Trigger */}
           <DropdownMenuTrigger className="relative flex items-center justify-center w-10 h-10 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus:outline-none cursor-pointer">
             <Bell className="h-5 w-5" />
-            <NotificationDot /> 
+            <NotificationDot />
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent align="end" className="w-80 p-0">
+          <DropdownMenuContent align="end" className="w-[380px] p-0 shadow-2xl border-border">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
-              <span className="font-semibold text-foreground">Notifications</span>
+              <span className="font-semibold text-sm text-foreground">Notifications</span>
               <MarkAllReadButton />
             </div>
-            
+
             <NotificationList />
-            
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Profile */}
+        {/* Profile Dropdown */}
         <DropdownMenu>
-         <DropdownMenuTrigger 
-            className={buttonVariants({ 
-              variant: "ghost", 
-              className: "flex items-center gap-2 hover:bg-transparent cursor-pointer border-0 outline-none" 
+          <DropdownMenuTrigger
+            className={buttonVariants({
+              variant: "ghost",
+              className:
+                "flex items-center gap-2 hover:bg-transparent cursor-pointer border-0 outline-none",
             })}
           >
             {isLoading ? (
@@ -245,10 +257,7 @@ export default function Header() {
                 </div>
 
                 <Avatar className="h-9 w-9 border border-border">
-                  <AvatarImage
-                    src={user?.profileImage || ""}
-                    alt={user?.firstName}
-                  />
+                  <AvatarImage src={user?.profileImage || ""} alt={user?.firstName} />
                   <AvatarFallback className="bg-primary/20 text-secondary font-bold">
                     {getInitials(user?.firstName, user?.lastName)}
                   </AvatarFallback>
@@ -257,8 +266,7 @@ export default function Header() {
             )}
           </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="end" className="w-60">
-            {/* Wrap the label in a group to satisfy the UI context */}
+          <DropdownMenuContent align="end" className="w-60">
             <DropdownMenuGroup>
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
             </DropdownMenuGroup>
@@ -266,7 +274,6 @@ export default function Header() {
             <DropdownMenuSeparator />
 
             <DropdownMenuGroup>
-              {/* Profile Settings (Fixed Navigation) */}
               <DropdownMenuItem
                 onClick={() => router.push("/workspace/profile")}
                 className="flex items-center cursor-pointer"
@@ -275,7 +282,6 @@ export default function Header() {
                 <span>Profile Settings</span>
               </DropdownMenuItem>
 
-              {/* Manage Sessions (Fixed Navigation) */}
               <DropdownMenuItem
                 onClick={() => router.push("/workspace/profile?tab=security#sessions")}
                 className="flex items-center cursor-pointer"
@@ -301,20 +307,36 @@ export default function Header() {
   );
 }
 
-// Helper components to keep Header clean
-const fetchNotifications = async () => {
-  const token = localStorage.getItem("hrms_token");
+// ==========================================
+// NOTIFICATION SUBCOMPONENTS
+// ==========================================
+const fetchNotifications = async (filter: "unread" | "all" = "unread") => {
+  const token = typeof window !== "undefined" ? localStorage.getItem("hrms_token") : null;
   if (!token) return [];
-  const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/notifications/unread`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  return res.data;
+  const endpoint = filter === "all" ? "/notifications?limit=40" : "/notifications/unread";
+  const res = await axios.get(
+    `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${endpoint}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  return Array.isArray(res.data) ? res.data : [];
 };
 
 function NotificationDot() {
-  const { data: notifications } = useQuery({ queryKey: ["notifications"], queryFn: fetchNotifications, refetchInterval: 30000 }); // Polls every 30s
+  const { data: notifications } = useQuery({
+    queryKey: ["notifications", "unread"],
+    queryFn: () => fetchNotifications("unread"),
+    refetchInterval: 30000,
+  });
+
   if (!notifications || notifications.length === 0) return null;
-  return <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500 border-2 border-white" />;
+
+  return (
+    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white font-bold text-[10px] flex items-center justify-center border-2 border-background animate-in zoom-in-50">
+      {notifications.length > 9 ? "9+" : notifications.length}
+    </span>
+  );
 }
 
 function MarkAllReadButton() {
@@ -322,48 +344,234 @@ function MarkAllReadButton() {
   const markAllMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("hrms_token");
-      await axios.patch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/notifications/read-all`, {}, { headers: { Authorization: `Bearer ${token}` }});
+      await axios.patch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/notifications/read-all`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
   });
 
   return (
-    <button onClick={() => markAllMutation.mutate()} className="text-xs text-amber-600 hover:text-amber-700 font-medium flex items-center">
-      <Check className="w-3 h-3 mr-1" /> Mark all read
+    <button
+      onClick={() => markAllMutation.mutate()}
+      className="text-xs text-primary hover:underline font-medium flex items-center gap-1 cursor-pointer"
+      title="Mark all as read"
+    >
+      <Check className="w-3.5 h-3.5" /> Mark all read
     </button>
   );
 }
 
+function getNotificationIcon(type?: string, title?: string) {
+  if (title?.toUpperCase().includes("[URGENT]")) {
+    return <AlertTriangle className="w-4 h-4 text-rose-500" />;
+  }
+  switch (type?.toUpperCase()) {
+    case "ANNOUNCEMENT":
+      return <Megaphone className="w-4 h-4 text-amber-500" />;
+    case "ALERT":
+      return <AlertTriangle className="w-4 h-4 text-rose-500" />;
+    case "POLICY":
+      return <FileText className="w-4 h-4 text-blue-500" />;
+    case "LEAVE":
+      return <Calendar className="w-4 h-4 text-emerald-500" />;
+    case "ATTENDANCE":
+      return <Clock className="w-4 h-4 text-purple-500" />;
+    default:
+      return <Bell className="w-4 h-4 text-primary" />;
+  }
+}
+
 function NotificationList() {
+  const [filter, setFilter] = useState<"unread" | "all">("unread");
+  const [selectedNotif, setSelectedNotif] = useState<any>(null);
   const queryClient = useQueryClient();
-  const { data: notifications, isLoading } = useQuery({ queryKey: ["notifications"], queryFn: fetchNotifications });
+
+  const { data: notifications, isLoading } = useQuery({
+    queryKey: ["notifications", filter],
+    queryFn: () => fetchNotifications(filter),
+  });
 
   const readMutation = useMutation({
     mutationFn: async (id: string) => {
       const token = localStorage.getItem("hrms_token");
-      await axios.patch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/notifications/${id}/read`, {}, { headers: { Authorization: `Bearer ${token}` }});
+      await axios.patch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/notifications/${id}/read`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
   });
 
-  if (isLoading) return <NotificationListSkeleton count={4} />;
-  if (!notifications || notifications.length === 0) {
-    return <div className="p-8 text-center text-sm text-muted-foreground">You're all caught up! 🎉</div>;
-  }
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const token = localStorage.getItem("hrms_token");
+      await axios.delete(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/notifications/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      if (selectedNotif) setSelectedNotif(null);
+    },
+  });
+
+  const handleNotificationClick = (notif: any) => {
+    setSelectedNotif(notif);
+    if (!notif.isRead) {
+      readMutation.mutate(notif.id);
+    }
+  };
 
   return (
-    <div className="max-h-[300px] overflow-y-auto">
-      {notifications.map((notif: any) => (
-        <div key={notif.id} className="p-4 border-b border-border hover:bg-primary/10 transition-colors flex items-start justify-between group cursor-pointer" onClick={() => readMutation.mutate(notif.id)}>
-          <div className="space-y-1 pr-4">
-            <p className="text-sm font-semibold text-foreground">{notif.title}</p>
-            <p className="text-xs text-muted-foreground line-clamp-2">{notif.message}</p>
-            <p className="text-[10px] text-muted-foreground/60 mt-2">{new Date(notif.createdAt).toLocaleDateString()} at {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-          </div>
-          <div className="w-2 h-2 mt-1 rounded-full bg-primary shrink-0 group-hover:hidden" />
-          <Check className="w-4 h-4 text-muted-foreground/40 hidden group-hover:block shrink-0" />
+    <>
+      {/* Filter Tabs */}
+      <div className="flex items-center px-4 py-2 border-b border-border bg-muted/20 gap-2 text-xs">
+        <button
+          onClick={() => setFilter("unread")}
+          className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+            filter === "unread"
+              ? "bg-primary text-primary-foreground font-semibold"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Unread
+        </button>
+        <button
+          onClick={() => setFilter("all")}
+          className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+            filter === "all"
+              ? "bg-primary text-primary-foreground font-semibold"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          All Activity
+        </button>
+      </div>
+
+      {isLoading ? (
+        <NotificationListSkeleton count={4} />
+      ) : !notifications || notifications.length === 0 ? (
+        <div className="p-8 text-center text-xs text-muted-foreground">
+          {filter === "unread" ? "You're all caught up! 🎉" : "No notification history yet."}
         </div>
-      ))}
-    </div>
+      ) : (
+        <div className="max-h-[340px] overflow-y-auto divide-y divide-border/60">
+          {notifications.map((notif: any) => {
+            const isUrgent = notif.title?.toUpperCase().includes("[URGENT]");
+            return (
+              <div
+                key={notif.id}
+                className={`p-3.5 transition-colors flex items-start gap-3 group cursor-pointer ${
+                  notif.isRead
+                    ? "bg-background/40 hover:bg-muted/40 opacity-75"
+                    : "bg-primary/5 hover:bg-primary/10 border-l-2 border-primary"
+                }`}
+                onClick={() => handleNotificationClick(notif)}
+              >
+                <div className="p-2 rounded-lg bg-background border border-border shadow-xs shrink-0 mt-0.5">
+                  {getNotificationIcon(notif.type, notif.title)}
+                </div>
+
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {isUrgent && (
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/15 text-rose-600 border border-rose-500/30">
+                        URGENT
+                      </span>
+                    )}
+                    <p
+                      className={`text-xs text-foreground truncate ${
+                        notif.isRead ? "font-medium" : "font-bold"
+                      }`}
+                    >
+                      {notif.title.replace("[URGENT] ", "")}
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                    {notif.message}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground/60">
+                    {new Date(notif.createdAt).toLocaleDateString()} at{" "}
+                    {new Date(notif.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  {!notif.isRead && <span className="w-2 h-2 rounded-full bg-primary" />}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteMutation.mutate(notif.id);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground/50 hover:text-rose-500 transition-opacity"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Detail Dialog for reading full notification */}
+      {selectedNotif && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-in fade-in"
+          onClick={() => setSelectedNotif(null)}
+        >
+          <div
+            className="bg-card border border-border rounded-xl shadow-2xl max-w-md w-full p-5 space-y-4 text-left animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                {getNotificationIcon(selectedNotif.type, selectedNotif.title)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-foreground">{selectedNotif.title}</h3>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Received on {new Date(selectedNotif.createdAt).toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-lg bg-muted/30 border border-border text-xs text-foreground leading-relaxed whitespace-pre-wrap max-h-60 overflow-y-auto">
+              {selectedNotif.message}
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <button
+                onClick={() => deleteMutation.mutate(selectedNotif.id)}
+                className="text-xs text-rose-500 hover:text-rose-600 flex items-center gap-1 font-medium cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete
+              </button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSelectedNotif(null)}
+                className="text-xs h-8"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

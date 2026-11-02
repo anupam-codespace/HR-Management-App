@@ -19,10 +19,15 @@ export default function ForgotPasswordPage() {
     setError("");
 
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/auth/forgot-password`, { email });
+      const trimmedEmail = email.trim();
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/auth/forgot-password`, { email: trimmedEmail });
       setSuccess(true);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Something went wrong. Please try again.");
+      const apiMessage = err.response?.data?.message;
+      const message = Array.isArray(apiMessage)
+        ? apiMessage.join(', ')
+        : (typeof apiMessage === 'string' ? apiMessage : "Something went wrong. Please try again.");
+      setError(message);
     } finally {
       setLoading(false);
     }

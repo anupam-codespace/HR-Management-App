@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePermissions } from "@/context/PermissionContext";
 import { AttendanceWidget } from "@/components/dashboard/AttendanceWidget";
+import { BroadcastNotificationModal } from "@/components/notifications/BroadcastNotificationModal";
 
 export function HRDashboardView() {
   const { isWidgetEnabled } = usePermissions();
@@ -342,9 +343,18 @@ export function HRDashboardView() {
           {/* Announcement Publisher Form */}
           <Card className="border-border bg-card shadow-sm">
             <CardHeader className="pb-3 border-b border-border">
-              <CardTitle className="text-base font-bold text-foreground flex items-center">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-bold text-foreground flex items-center">
                 <Megaphone className="w-4 h-4 mr-2 text-primary" /> Broadcast Announcement
-              </CardTitle>
+                </CardTitle>
+                <BroadcastNotificationModal
+                  trigger={
+                    <Button variant="outline" size="sm" className="text-xs h-7 border-primary/30 text-primary hover:bg-primary/10">
+                      <Users className="w-3.5 h-3.5 mr-1" /> Target Departments / Staff
+                    </Button>
+                  }
+                />
+              </div>
               <CardDescription>Publish updates to all employees instantly.</CardDescription>
             </CardHeader>
             <CardContent className="p-6">

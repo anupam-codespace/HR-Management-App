@@ -11,6 +11,7 @@ describe('AuthService', () => {
   const prisma = {
     employee: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       update: jest.fn(),
     },
     company: {
@@ -110,6 +111,59 @@ describe('AuthService', () => {
         normalizedEmail,
         expect.stringContaining('/reset-password?token='),
       );
+    });
+
+    it('throws BadRequestException if email is invalid', async () => {
+      await expect(service.forgotPassword('')).rejects.toThrow();
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('successfully resets password with valid token and hashes new password', async () => {
+      const token = 'valid-test-token';
+      const newPassword = 'NewSecurePassword123!';
+
+      prisma.employee.findFirst.mockResolvedValue({
+        id: 'employee-1',
+        companyId: 'company-1',
+      });
+      prisma.employee.update.mockResolvedValue({});
+      auditService.logAction.mockResolvedValue({});
+
+      const result = await service.resetPassword(token, newPassword);
+
+      expect(result).toEqual({ message: 'Password has been reset successfully' });
+      expect(prisma.employee.update).toHaveBeenCalledWith({
+        where: { id: 'employee-1' },
+        data: {
+          password: expect.any(String),
+          resetPasswordToken: null,
+          resetPasswordExpires: null,
+        },
+      });
+      expect(auditService.logAction).toHaveBeenCalledWith(
+        'company-1',
+        'employee-1',
+        'UPDATE',
+        'Employee',
+        'employee-1',
+        null,
+        { field: 'password', reason: 'PASSWORD_RESET' },
+      );
+    });
+
+    it('throws BadRequestException if token is invalid or expired', async () => {
+      prisma.employee.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.resetPassword('invalid-token', 'NewSecurePassword123!'),
+      ).rejects.toThrow('Token is invalid or has expired');
+    });
+
+    it('throws BadRequestException if password is too short', async () => {
+      await expect(
+        service.resetPassword('valid-token', 'short'),
+      ).rejects.toThrow('Password must be at least 8 characters long');
     });
   });
 });

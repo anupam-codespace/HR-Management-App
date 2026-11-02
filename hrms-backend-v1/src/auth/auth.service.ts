@@ -615,6 +615,10 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
+    if (!email || typeof email !== 'string') {
+      throw new BadRequestException('A valid email address is required');
+    }
+
     const normalizedEmail = email.trim().toLowerCase();
     const employee = await this.prisma.employee.findUnique({
       where: { email: normalizedEmail },
@@ -654,6 +658,14 @@ export class AuthService {
   }
 
   async resetPassword(token: string, newPassword: string) {
+    if (!token || typeof token !== 'string') {
+      throw new BadRequestException('Invalid or missing reset token');
+    }
+
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+      throw new BadRequestException('Password must be at least 8 characters long');
+    }
+
     // 1. Hash the incoming token so we can compare it to the DB
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
@@ -680,6 +692,17 @@ export class AuthService {
         resetPasswordExpires: null,
       },
     });
+
+    // 4. Record audit log
+    await this.auditService.logAction(
+      employee.companyId,
+      employee.id,
+      'UPDATE',
+      'Employee',
+      employee.id,
+      null,
+      { field: 'password', reason: 'PASSWORD_RESET' },
+    );
 
     return { message: 'Password has been reset successfully' };
   }

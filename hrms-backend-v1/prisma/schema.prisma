@@ -95,6 +95,25 @@ model Company {
   jobOffers            JobOffer[]
   employeeConversions  EmployeeConversion[]
 
+  // Training, Competency & Career Development
+  trainingCategories      TrainingCategory[]
+  trainingPrograms        TrainingProgram[]
+  trainingPlans           TrainingPlan[]
+  trainingSessions        TrainingSession[]
+  trainingEnrollments     TrainingEnrollment[]
+  trainingAttendances     TrainingAttendance[]
+  competencies            Competency[]
+  jobPositionCompetencies JobPositionCompetency[]
+  employeeCompetencies    EmployeeCompetency[]
+  trainingAssessments     TrainingAssessment[]
+  trainingCertificates    TrainingCertificate[]
+  trainingEvaluations     TrainingEvaluation[]
+  trainingExpenses        TrainingExpense[]
+  trainingApprovals       TrainingApproval[]
+  trainingMaterials       TrainingMaterial[]
+  positionChanges         EmployeePositionChange[]
+  positionChangeApprovals PositionChangeApproval[]
+
   slug                 String?       @unique
   status               CompanyStatus @default(PENDING_VERIFICATION)
 }
@@ -210,6 +229,26 @@ model Employee {
   application                  Application?          @relation("ApplicationEmployee")
   conversions                  EmployeeConversion[]  @relation("EmployeeConversions")
   performedConversions         EmployeeConversion[]  @relation("ConversionActor")
+
+  // Training, Competency & Career Development
+  requestedTrainingPlans     TrainingPlan[]           @relation("TrainingPlanRequester")
+  conductedSessions          TrainingSession[]        @relation("TrainingSessionTrainer")
+  conductedPlans             TrainingPlan[]           @relation("TrainingPlanTrainer")
+  trainingEnrollments        TrainingEnrollment[]     @relation("TrainingEnrollmentEmployee")
+  trainingAttendances        TrainingAttendance[]     @relation("TrainingAttendanceEmployee")
+  employeeCompetencies       EmployeeCompetency[]     @relation("EmployeeCompetencySubject")
+  assessedCompetencies       EmployeeCompetency[]     @relation("EmployeeCompetencyAssessor")
+  trainingAssessments        TrainingAssessment[]     @relation("TrainingAssessmentEmployee")
+  performedAssessments       TrainingAssessment[]     @relation("TrainingAssessmentAssessor")
+  trainingCertificates       TrainingCertificate[]    @relation("TrainingCertificateEmployee")
+  verifiedCertificates       TrainingCertificate[]    @relation("TrainingCertificateVerifier")
+  receivedEvaluations        TrainingEvaluation[]     @relation("TrainingEvaluationEmployee")
+  conductedEvaluations       TrainingEvaluation[]     @relation("TrainingEvaluationEvaluator")
+  performedTrainingApprovals TrainingApproval[]       @relation("TrainingApprovalPerformer")
+  proposedPositionChanges    EmployeePositionChange[] @relation("PositionChangeSubject")
+  appliedPositionChanges     EmployeePositionChange[] @relation("PositionChangeApplier")
+  performedPositionApprovals PositionChangeApproval[] @relation("PositionChangeApprovalPerformer")
+  trainingExpenses           TrainingExpense[]        @relation("TrainingExpenseEmployee")
 }
 
 // 4. Departments (Auto-generated during registration)
@@ -229,6 +268,12 @@ model Department {
   manpowerRequisitions ManpowerRequisition[]
   jobRequisitions      JobRequisition[]
   jobOfferVersions     JobOfferVersion[]
+
+  // Training & Career Progression
+  requestedTrainingPlans     TrainingPlan[]           @relation("DepartmentTrainingPlans")
+  targetTrainingPlans        TrainingPlan[]           @relation("TargetDepartmentTrainingPlans")
+  currentPositionChanges     EmployeePositionChange[] @relation("CurrentDepartmentPositionChanges")
+  proposedPositionChanges    EmployeePositionChange[] @relation("ProposedDepartmentPositionChanges")
 
   createdAt DateTime @default(now())
 }
@@ -270,6 +315,12 @@ model Designation {
   manpowerRequisitions ManpowerRequisition[]
   jobRequisitions      JobRequisition[]
   jobOfferVersions     JobOfferVersion[]
+
+  // Training & Career Progression
+  targetTrainingPlans        TrainingPlan[]           @relation("TargetDesignationTrainingPlans")
+  competencyRequirements     JobPositionCompetency[]
+  currentPositionChanges     EmployeePositionChange[] @relation("CurrentDesignationPositionChanges")
+  proposedPositionChanges    EmployeePositionChange[] @relation("ProposedDesignationPositionChanges")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -503,6 +554,8 @@ model Branch {
   name        String // e.g., "Headquarters", "Bangalore Tech Hub"
   address     String?
   departments Department[]
+  currentPositionChanges  EmployeePositionChange[] @relation("CurrentBranchPositionChanges")
+  proposedPositionChanges EmployeePositionChange[] @relation("ProposedBranchPositionChanges")
   createdAt   DateTime     @default(now())
 }
 
@@ -1798,4 +1851,498 @@ model EmployeeConversion {
 
   @@index([companyId])
 }
-
+
+
+// =======================================================
+// UNIVERSAL TRAINING, COMPETENCY & CAREER DEVELOPMENT MODULE
+// =======================================================
+
+model TrainingCategory {
+  id          String   @id @default(uuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name        String
+  code        String
+  description String?
+  color       String   @default("#6366F1")
+  icon        String   @default("BookOpen")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  programs TrainingProgram[]
+  plans    TrainingPlan[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+}
+
+model Competency {
+  id               String   @id @default(uuid())
+  companyId        String
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name             String
+  code             String
+  category         String   @default("Technical") // Technical, Compliance, Clinical, Safety, Leadership, Operational, Soft Skills
+  description      String?
+  proficiencyScale String   @default("STANDARD") // STANDARD: BEGINNER, INTERMEDIATE, ADVANCED, EXPERT
+  assessmentMethod String   @default("PRACTICAL_DEMO") // PRACTICAL_DEMO, WRITTEN_EXAM, SUPERVISOR_EVAL, CERTIFICATE_VERIFICATION
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  jobPositionRequirements JobPositionCompetency[]
+  employeeCompetencies    EmployeeCompetency[]
+  programCompetencies     TrainingProgramCompetency[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+}
+
+model JobPositionCompetency {
+  id            String      @id @default(uuid())
+  companyId     String
+  company       Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  designationId String
+  designation   Designation @relation(fields: [designationId], references: [id], onDelete: Cascade)
+  competencyId  String
+  competency    Competency  @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+  requiredLevel String      @default("INTERMEDIATE") // BEGINNER, INTERMEDIATE, ADVANCED, EXPERT
+  isMandatory   Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([designationId, competencyId])
+  @@index([companyId])
+  @@index([designationId])
+}
+
+model EmployeeCompetency {
+  id                 String    @id @default(uuid())
+  companyId          String
+  company            Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employeeId         String
+  employee           Employee  @relation("EmployeeCompetencySubject", fields: [employeeId], references: [id], onDelete: Cascade)
+  competencyId       String
+  competency         Competency @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+  currentLevel       String    @default("BEGINNER") // BEGINNER, INTERMEDIATE, ADVANCED, EXPERT
+  assessedById       String?
+  assessedBy         Employee? @relation("EmployeeCompetencyAssessor", fields: [assessedById], references: [id])
+  assessmentDate     DateTime  @default(now())
+  nextReviewDate     DateTime?
+  evidenceUrl        String?
+  verificationStatus String    @default("VERIFIED") // PENDING, VERIFIED, REJECTED
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([employeeId, competencyId])
+  @@index([companyId])
+  @@index([employeeId])
+}
+
+model TrainingProgram {
+  id                  String   @id @default(uuid())
+  companyId           String
+  company             Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  programCode         String
+  title               String
+  categoryId          String?
+  category            TrainingCategory? @relation(fields: [categoryId], references: [id])
+  description         String?
+  objectives          String?
+  prerequisites       String?
+  deliveryMethod      String   @default("HYBRID") // ONLINE, CLASSROOM, ON_THE_JOB, HYBRID, EXTERNAL
+  plannedHours        Float    @default(0)
+  passingScore        Float    @default(70.0)
+  requiresAssessment  Boolean  @default(true)
+  requiresCertificate Boolean  @default(false)
+  validityMonths      Int?     // e.g. 12 or 24 for mandatory renewals
+  targetAudience      String?
+  materialsUrl        String?
+  status              String   @default("PUBLISHED") // DRAFT, PUBLISHED, ARCHIVED
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  sessions     TrainingSession[]
+  plans        TrainingPlan[]
+  competencies TrainingProgramCompetency[]
+  materials    TrainingMaterial[]
+
+  @@unique([companyId, programCode])
+  @@index([companyId])
+}
+
+model TrainingProgramCompetency {
+  id           String          @id @default(uuid())
+  programId    String
+  program      TrainingProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  competencyId String
+  competency   Competency      @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+  targetLevel  String          @default("INTERMEDIATE")
+
+  @@unique([programId, competencyId])
+  @@index([programId])
+}
+
+model TrainingMaterial {
+  id          String          @id @default(uuid())
+  companyId   String
+  company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  programId   String
+  program     TrainingProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  title       String
+  fileUrl     String
+  fileType    String?
+  fileSize    Int?
+  description String?
+  createdAt   DateTime        @default(now())
+
+  @@index([programId])
+  @@index([companyId])
+}
+
+model TrainingPlan {
+  id                       String            @id @default(uuid())
+  companyId                String
+  company                  Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  planNumber               String
+  title                    String
+  categoryId               String?
+  category                 TrainingCategory? @relation(fields: [categoryId], references: [id])
+  programId                String?
+  program                  TrainingProgram?  @relation(fields: [programId], references: [id])
+  trainingType             String            @default("DEPARTMENTAL") // INDIVIDUAL, GROUP, COMPLIANCE, ONBOARDING, CAREER_PROMOTION, SKILL_GAP
+  businessJustification    String?
+  reason                   String            @default("SKILL_GAP") // SKILL_GAP, PERFORMANCE_REVIEW, PROMOTION_REQUIREMENT, NEW_RESPONSIBILITY, NEW_TECHNOLOGY, COMPLIANCE_REQUIREMENT, DEPARTMENTAL_NEED, CAREER_DEVELOPMENT
+  priority                 String            @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  requestingEmployeeId     String?
+  requestingEmployee       Employee?         @relation("TrainingPlanRequester", fields: [requestingEmployeeId], references: [id])
+  requestingDepartmentId   String?
+  requestingDepartment     Department?       @relation("DepartmentTrainingPlans", fields: [requestingDepartmentId], references: [id])
+  status                   String            @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, SCHEDULED, IN_PROGRESS, COMPLETED, REJECTED, CANCELLED
+  deliveryMethod           String            @default("HYBRID") // ONLINE, CLASSROOM, ON_THE_JOB, HYBRID, EXTERNAL
+  providerType             String            @default("INTERNAL") // INTERNAL, EXTERNAL
+  providerName             String?
+  trainerName              String?
+  trainerEmployeeId        String?
+  trainerEmployee          Employee?         @relation("TrainingPlanTrainer", fields: [trainerEmployeeId], references: [id])
+  venueOrLink              String?
+  startDate                DateTime?
+  endDate                  DateTime?
+  plannedHours             Float             @default(0)
+  totalBudget              Float             @default(0)
+  estimatedTravelCost      Float             @default(0)
+  estimatedRegistrationCost Float             @default(0)
+  estimatedAccommodationCost Float           @default(0)
+  estimatedMaterialCost    Float             @default(0)
+  targetDesignationId      String?
+  targetDesignation        Designation?      @relation("TargetDesignationTrainingPlans", fields: [targetDesignationId], references: [id])
+  targetDepartmentId       String?
+  targetDepartment         Department?       @relation("TargetDepartmentTrainingPlans", fields: [targetDepartmentId], references: [id])
+  proposedEffectiveDate    DateTime?
+  rejectionReason          String?
+  notes                    String?
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+
+  enrollments     TrainingEnrollment[]
+  sessions        TrainingSession[]
+  approvals       TrainingApproval[]
+  expenses        TrainingExpense[]
+  evaluations     TrainingEvaluation[]
+  positionChanges EmployeePositionChange[]
+  assessments     TrainingAssessment[]
+  certificates    TrainingCertificate[]
+
+  @@unique([companyId, planNumber])
+  @@index([companyId])
+  @@index([status])
+}
+
+model TrainingSession {
+  id                String          @id @default(uuid())
+  companyId         String
+  company           Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  planId            String
+  plan              TrainingPlan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  programId         String?
+  program           TrainingProgram? @relation(fields: [programId], references: [id])
+  sessionNumber     Int             @default(1)
+  title             String
+  startTime         DateTime
+  endTime           DateTime
+  timeZone          String          @default("UTC")
+  trainerName       String?
+  trainerEmployeeId String?
+  trainerEmployee   Employee?       @relation("TrainingSessionTrainer", fields: [trainerEmployeeId], references: [id])
+  venueOrLink       String?
+  deliveryMethod    String          @default("HYBRID")
+  capacity          Int             @default(50)
+  status            String          @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED, RESCHEDULED
+  notes             String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  attendances TrainingAttendance[]
+
+  @@index([companyId])
+  @@index([planId])
+}
+
+model TrainingEnrollment {
+  id                   String       @id @default(uuid())
+  companyId            String
+  company              Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  planId               String
+  plan                 TrainingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  employeeId           String
+  employee             Employee     @relation("TrainingEnrollmentEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  status               String       @default("ENROLLED") // ENROLLED, IN_PROGRESS, COMPLETED, DROPPED, FAILED
+  enrolledAt           DateTime     @default(now())
+  completionDate       DateTime?
+  completionPercentage Float        @default(0)
+  actualHoursSpent     Float        @default(0)
+  preTrainingRating    Int?         // 1 to 5
+  postTrainingRating   Int?         // 1 to 5
+  trainerFeedback      String?
+  employeeFeedback     String?
+  absenceReason        String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  attendances  TrainingAttendance[]
+  assessments  TrainingAssessment[]
+  certificates TrainingCertificate[]
+  evaluations  TrainingEvaluation[]
+
+  @@unique([planId, employeeId])
+  @@index([companyId])
+  @@index([employeeId])
+}
+
+model TrainingAttendance {
+  id             String             @id @default(uuid())
+  companyId      String
+  company        Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sessionId      String
+  session        TrainingSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  enrollmentId   String
+  enrollment     TrainingEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  employeeId     String
+  employee       Employee           @relation("TrainingAttendanceEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  status         String             @default("PRESENT") // PRESENT, ABSENT, LATE, EXCUSED
+  attendedHours  Float              @default(0)
+  checkInTime    DateTime?
+  checkOutTime   DateTime?
+  notes          String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([sessionId, employeeId])
+  @@index([companyId])
+  @@index([sessionId])
+  @@index([employeeId])
+}
+
+model TrainingAssessment {
+  id             String              @id @default(uuid())
+  companyId      String
+  company        Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  planId         String
+  plan           TrainingPlan        @relation(fields: [planId], references: [id], onDelete: Cascade)
+  enrollmentId   String
+  enrollment     TrainingEnrollment  @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  employeeId     String
+  employee       Employee            @relation("TrainingAssessmentEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  assessmentType String              @default("PRACTICAL") // PRACTICAL, WRITTEN_EXAM, QUIZ, SUPERVISOR_EVAL, TRAINER_EVAL, COMPETENCY_DEMO, EXTERNAL_VERIFICATION
+  title          String
+  passingScore   Float               @default(70.0)
+  maxScore       Float               @default(100.0)
+  scoreAchieved  Float?
+  result         String              @default("PENDING") // PENDING, PASSED, FAILED, WAIVED
+  attemptNumber  Int                 @default(1)
+  assessorId     String?
+  assessor       Employee?           @relation("TrainingAssessmentAssessor", fields: [assessorId], references: [id])
+  assessorName   String?
+  assessedAt     DateTime?
+  feedback       String?
+  evidenceUrl    String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([companyId])
+  @@index([planId])
+  @@index([employeeId])
+}
+
+model TrainingCertificate {
+  id                  String              @id @default(uuid())
+  companyId           String
+  company             Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employeeId          String
+  employee            Employee            @relation("TrainingCertificateEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  planId              String?
+  plan                TrainingPlan?       @relation(fields: [planId], references: [id])
+  enrollmentId        String?
+  enrollment          TrainingEnrollment? @relation(fields: [enrollmentId], references: [id])
+  title               String
+  certificateNumber   String?
+  issuingOrganization String
+  issueDate           DateTime
+  expiryDate          DateTime?           // For mandatory renewal / expiring qualifications
+  verificationStatus  String              @default("VERIFIED") // PENDING, VERIFIED, REJECTED, REVOKED
+  verifiedById        String?
+  verifiedBy          Employee?           @relation("TrainingCertificateVerifier", fields: [verifiedById], references: [id])
+  verifiedAt          DateTime?
+  credentialUrl       String?
+  documentUrl         String?
+  notes               String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([expiryDate])
+}
+
+model TrainingEvaluation {
+  id                           String              @id @default(uuid())
+  companyId                    String
+  company                      Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  planId                       String
+  plan                         TrainingPlan        @relation(fields: [planId], references: [id], onDelete: Cascade)
+  enrollmentId                 String
+  enrollment                   TrainingEnrollment  @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  employeeId                   String
+  employee                     Employee            @relation("TrainingEvaluationEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  evaluatorId                  String
+  evaluator                    Employee            @relation("TrainingEvaluationEvaluator", fields: [evaluatorId], references: [id])
+  evaluationDate               DateTime            @default(now())
+  competenciesAchieved         String[]            @default([])
+  trainingEffectivenessRating  Int                 @default(5) // 1 to 5
+  businessImpact               String?
+  remainingGaps                String?
+  trainerFeedbackSummary       String?
+  managerEvaluationNotes       String
+  employeeFeedbackSummary      String?
+  recommendedOutcome           String              @default("CONTINUE_CURRENT_ROLE") 
+  // 10 outcomes:
+  // CONTINUE_CURRENT_ROLE, AUTHORIZE_ADDITIONAL_DUTIES, RECOMMEND_PROMOTION,
+  // INITIATE_TRANSFER, RECOMMEND_ROLE_CHANGE, UPDATE_APPROVED_GRADE_DESIGNATION,
+  // RECOMMEND_COMPENSATION_REVIEW, ASSIGN_REMEDIAL_TRAINING, DEFER_DECISION, CLOSE_WITHOUT_CHANGE
+  actionStatus                 String              @default("PENDING_REVIEW") // PENDING_REVIEW, POSITION_CHANGE_INITIATED, DUTIES_AUTHORIZED, REMEDIAL_ASSIGNED, CLOSED
+  supportingEvidenceUrl        String?
+  createdAt                    DateTime            @default(now())
+  updatedAt                    DateTime            @updatedAt
+
+  positionChange EmployeePositionChange?
+
+  @@index([companyId])
+  @@index([planId])
+  @@index([employeeId])
+}
+
+model EmployeePositionChange {
+  id                      String                  @id @default(uuid())
+  companyId               String
+  company                 Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  changeNumber            String
+  employeeId              String
+  employee                Employee                @relation("PositionChangeSubject", fields: [employeeId], references: [id], onDelete: Cascade)
+  trainingPlanId          String?
+  trainingPlan            TrainingPlan?           @relation(fields: [trainingPlanId], references: [id])
+  evaluationId            String?                 @unique
+  evaluation              TrainingEvaluation?     @relation(fields: [evaluationId], references: [id])
+  changeType              String                  @default("PROMOTION") // PROMOTION, TRANSFER, REDESIGNATION, ADDITIONAL_RESPONSIBILITY, GRADE_CHANGE
+  reason                  String
+  currentDepartmentId     String?
+  currentDepartment       Department?             @relation("CurrentDepartmentPositionChanges", fields: [currentDepartmentId], references: [id])
+  proposedDepartmentId    String?
+  proposedDepartment      Department?             @relation("ProposedDepartmentPositionChanges", fields: [proposedDepartmentId], references: [id])
+  currentDesignationId    String?
+  currentDesignation      Designation?            @relation("CurrentDesignationPositionChanges", fields: [currentDesignationId], references: [id])
+  proposedDesignationId   String?
+  proposedDesignation     Designation?            @relation("ProposedDesignationPositionChanges", fields: [proposedDesignationId], references: [id])
+  currentJobGrade         String?
+  proposedJobGrade        String?
+  currentBranchId         String?
+  currentBranch           Branch?                 @relation("CurrentBranchPositionChanges", fields: [currentBranchId], references: [id])
+  proposedBranchId        String?
+  proposedBranch          Branch?                 @relation("ProposedBranchPositionChanges", fields: [proposedBranchId], references: [id])
+  proposedEffectiveDate   DateTime
+  compensationReviewStatus String                 @default("NOT_REQUIRED") // NOT_REQUIRED, PENDING_REVIEW, APPROVED, REVISED
+  proposedSalaryIncrease  Float?
+  decisionNotes           String?
+  status                  String                  @default("PENDING_APPROVAL") // PENDING_APPROVAL, APPROVED, REJECTED, REVISION_REQUESTED, DEFERRED, APPLIED
+  appliedAt               DateTime?
+  appliedById             String?
+  appliedBy               Employee?               @relation("PositionChangeApplier", fields: [appliedById], references: [id])
+  rejectionReason         String?
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+
+  approvals PositionChangeApproval[]
+
+  @@unique([companyId, changeNumber])
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([status])
+}
+
+model PositionChangeApproval {
+  id               String                 @id @default(uuid())
+  companyId        String
+  company          Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  positionChangeId String
+  positionChange   EmployeePositionChange @relation(fields: [positionChangeId], references: [id], onDelete: Cascade)
+  approverId       String
+  approver         Employee               @relation("PositionChangeApprovalPerformer", fields: [approverId], references: [id])
+  stage            String                 @default("HR_HEAD") // DEPARTMENT_HEAD, HR_HEAD, FINANCE, SUPER_ADMIN
+  status           String                 @default("PENDING") // PENDING, APPROVED, REJECTED, CHANGES_REQUESTED
+  comments         String?
+  actionDate       DateTime?
+  createdAt        DateTime               @default(now())
+
+  @@index([positionChangeId])
+  @@index([companyId])
+}
+
+model TrainingApproval {
+  id           String       @id @default(uuid())
+  companyId    String
+  company      Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  planId       String
+  plan         TrainingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  approverId   String
+  approver     Employee     @relation("TrainingApprovalPerformer", fields: [approverId], references: [id])
+  approvalType String       @default("PLAN_SUBMISSION") // PLAN_SUBMISSION, BUDGET_APPROVAL, COMPLETION_EXCEPTION
+  status       String       @default("PENDING") // PENDING, APPROVED, REJECTED, CHANGES_REQUESTED
+  comments     String?
+  actionDate   DateTime?
+  createdAt    DateTime     @default(now())
+
+  @@index([planId])
+  @@index([companyId])
+}
+
+model TrainingExpense {
+  id              String       @id @default(uuid())
+  companyId       String
+  company         Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  planId          String
+  plan            TrainingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  employeeId      String?
+  employee        Employee?    @relation("TrainingExpenseEmployee", fields: [employeeId], references: [id])
+  expenseCategory String       @default("MISC") // REGISTRATION, TRAINER_FEE, TRAVEL, ACCOMMODATION, MATERIALS, CERTIFICATION, VENUE, MISC
+  amount          Float
+  currency        String       @default("INR")
+  date            DateTime     @default(now())
+  receiptUrl      String?
+  description     String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([planId])
+  @@index([companyId])
+}
