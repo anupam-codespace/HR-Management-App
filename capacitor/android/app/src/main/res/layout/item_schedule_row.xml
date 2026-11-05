@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp">
+
+    <!-- Date Box -->
+    <LinearLayout
+        android:id="@+id/llDateBox"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_alignParentStart="true"
+        android:layout_centerVertical="true"
+        android:background="@drawable/bg_date_badge"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvItemDayNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#0F172A"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            tools:text="13" />
+
+        <TextView
+            android:id="@+id/tvItemDayName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#64748B"
+            android:textSize="10sp"
+            tools:text="Sun" />
+    </LinearLayout>
+
+    <!-- Shift Details -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="14dp"
+        android:layout_toEndOf="@id/llDateBox"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvItemShiftTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#0F172A"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            tools:text="General" />
+
+        <TextView
+            android:id="@+id/tvItemShiftTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="#64748B"
+            android:textSize="12sp"
+            tools:text="09:00 AM to 06:00 PM" />
+    </LinearLayout>
+
+    <!-- Tag Badge -->
+    <TextView
+        android:id="@+id/tvItemTag"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:background="@drawable/bg_tag_weekend"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="3dp"
+        android:paddingBottom="3dp"
+        android:textColor="#D97706"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        tools:text="Weekend" />
+
+</RelativeLayout>

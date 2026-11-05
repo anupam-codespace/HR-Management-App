@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="36dp"
+    android:height="36dp"
+    android:viewportWidth="36"
+    android:viewportHeight="36">
+    <!-- Rounded Blue Square Container -->
+    <path
+        android:fillColor="#0056FD"
+        android:pathData="M10,0h16c5.52,0 10,4.48 10,10v16c0,5.52 -4.48,10 -10,10H10C4.48,36 0,31.52 0,26V10C0,4.48 4.48,0 10,0z" />
+    <!-- White Stylized T Glyph -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M9,9h18v4H20v14h-4V13H9V9z" />
+</vector>

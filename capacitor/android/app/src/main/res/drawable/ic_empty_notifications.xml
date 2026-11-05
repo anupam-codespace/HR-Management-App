@@ -1,0 +1,60 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <!-- Back Document -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#334155"
+        android:strokeWidth="2.5"
+        android:strokeLineJoin="round"
+        android:pathData="M38,22 H64 L76,34 V68 H38 Z" />
+    <!-- Back Doc Folded Corner -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#334155"
+        android:strokeWidth="2"
+        android:strokeLineJoin="round"
+        android:pathData="M64,22 V34 H76" />
+    <!-- Back Doc Lines -->
+    <path
+        android:strokeColor="#334155"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M46,42 H60 M46,50 H56" />
+
+    <!-- Front Document -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#334155"
+        android:strokeWidth="2.5"
+        android:strokeLineJoin="round"
+        android:pathData="M48,34 H74 L86,46 V84 H48 Z" />
+    <!-- Front Doc Folded Corner -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#334155"
+        android:strokeWidth="2"
+        android:strokeLineJoin="round"
+        android:pathData="M74,34 V46 H86" />
+    <!-- Front Doc Lines -->
+    <path
+        android:strokeColor="#334155"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:pathData="M56,56 H76 M56,64 H76 M56,72 H68" />
+
+    <!-- Red Circle Badge on bottom right -->
+    <path
+        android:fillColor="#EF4444"
+        android:pathData="M88,78 A10,10 0 1,1 88,98 A10,10 0 1,1 88,78 Z" />
+    <!-- White 'x' inside red badge -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M84.5,84.5 L91.5,91.5 M91.5,84.5 L84.5,91.5" />
+
+</vector>

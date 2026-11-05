@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Production build
+dist/
+dist-ssr/
+*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS Files
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Android build outputs and cache
+android/.gradle/
+android/build/
+android/app/build/
+android/.idea/
+android/*.iml
+android/app/*.iml
+android/local.properties
+android/.cxx/
+
+# iOS build outputs and cache
+ios/App/Pods/
+ios/App/.build/
+ios/App/*.xcworkspace/xcuserdata/
+ios/App/*.xcodeproj/xcuserdata/
+ios/App/*.xcodeproj/project.xcworkspace/xcuserdata/
+ios/App/DerivedData/
