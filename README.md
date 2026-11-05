@@ -17,7 +17,7 @@ A modern, production-ready full-stack application for managing human resources. 
 - **Security:** Helmet, Throttler (Rate Limiting), Joi (Env Validation)
 - **Observability:** `nestjs-pino` (Structured Logging), [Sentry](https://sentry.io/) (Error Tracking)
 
----
+-------
 
 ## 🌟 Key Features
 
