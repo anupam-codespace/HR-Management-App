@@ -57,6 +57,7 @@ A modern, production-ready full-stack application for managing human resources. 
    cd hrms-backend-v1
    ```
 
+
 5. Run database migrations:
    ```bash
    npx prisma generate
