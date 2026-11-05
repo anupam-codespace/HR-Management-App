@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="52dp"
+    android:background="?attr/selectableItemBackground">
+
+    <!-- Tab Title -->
+    <TextView
+        android:id="@+id/tvTabTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_centerVertical="true"
+        android:textColor="#0F172A"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        tools:text="Activities" />
+
+    <!-- Locked Lock Icon -->
+    <ImageView
+        android:id="@+id/ivLockedIcon"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:src="@drawable/ic_lock_red"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <!-- Customizable Controls: Switch + Drag Handle -->
+    <LinearLayout
+        android:id="@+id/llCustomControls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <Switch
+            android:id="@+id/swTabToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true" />
+
+        <ImageView
+            android:id="@+id/ivDragHandle"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_marginStart="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Drag handle"
+            android:padding="2dp"
+            android:src="@drawable/ic_drag_handle" />
+    </LinearLayout>
+
+</RelativeLayout>

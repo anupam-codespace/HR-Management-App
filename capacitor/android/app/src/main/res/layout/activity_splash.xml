@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootSplash"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#050A1E">
+
+    <!-- Fullscreen Hardware-Accelerated Video Background -->
+    <TextureView
+        android:id="@+id/textureViewVideo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Subtle Cinematic Gradient Overlay -->
+    <View
+        android:id="@+id/viewOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_splash_overlay" />
+
+    <!-- Clean Floating Branding (No Square Box, Clean & Focused) -->
+    <LinearLayout
+        android:id="@+id/layoutSplashCenter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <!-- Logo Badge (104dp, slightly larger as requested) -->
+        <FrameLayout
+            android:layout_width="104dp"
+            android:layout_height="104dp"
+            android:background="@drawable/bg_splash_logo_badge"
+            android:elevation="8dp">
+
+            <ImageView
+                android:id="@+id/ivSplashLogo"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
+                android:layout_gravity="center"
+                android:src="@drawable/splash_logo"
+                android:scaleType="fitCenter"
+                android:contentDescription="TeamHub Logo" />
+        </FrameLayout>
+
+        <!-- Brand Name (Using the app's bold headline font style) -->
+        <TextView
+            android:id="@+id/tvSplashTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="TeamHub"
+            android:textColor="#FFFFFF"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif"
+            android:shadowColor="#80000000"
+            android:shadowDx="0"
+            android:shadowDy="4"
+            android:shadowRadius="12" />
+    </LinearLayout>
+
+</RelativeLayout>
